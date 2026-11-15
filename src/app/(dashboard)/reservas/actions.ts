@@ -5,9 +5,10 @@ import { prisma } from "@/lib/prisma"
 import { assertRole, STAFF } from "@/lib/session"
 import { reservaFormSchema } from "@/lib/validations/reserva"
 import { actionError, formToObject, type FormState, erroValidacao } from "@/lib/form-state"
-import { diffMin, fmtTime, fromMin, dayRange, diaSemanaOf, toDbDateTime, toMin, todayStr } from "@/lib/dates"
+import { diffMin, fmtDateBR, fmtTime, fromMin, dayRange, diaSemanaOf, toDbDateTime, toMin, todayStr } from "@/lib/dates"
 import { MSG_CONFLITO_SALA, ocupacoesDoDia, conflita, salaEmManutencao } from "@/lib/conflitos"
 import { redirectOk } from "@/lib/flash"
+import { notificar } from "@/lib/notificar"
 
 const MSG_CONFLITO_PROF = "Conflito de horário: o professor não está disponível neste período."
 
@@ -79,11 +80,21 @@ export async function reagendarReserva(id: string, _prev: FormState, fd: FormDat
 export async function cancelarReserva(id: string): Promise<FormState> {
   try {
     const user = await assertRole(["ADMIN", "SECRETARIA", "PROFESSOR"])
-    const r = await prisma.reserva.findUnique({ where: { id } })
+    const r = await prisma.reserva.findUnique({ where: { id }, include: { sala: true, solicitacao: { include: { aluno: true } } } })
     if (!r) return { error: "Reserva não encontrada." }
     const pode = user.role === "ADMIN" || user.role === "SECRETARIA" || r.criadoPorId === user.id
     if (!pode) return { error: "Você não possui permissão para cancelar esta reserva." }
+    if (r.status === "CANCELADA") return { error: "Esta reserva já está cancelada." }
     await prisma.reserva.update({ where: { id }, data: { status: "CANCELADA" } })
+    // Reserva gerada por uma solicitação aprovada: o aluno precisa saber que a aula não vai acontecer
+    const aluno = r.solicitacao?.aluno
+    if (aluno?.usuarioId) {
+      await notificar(
+        [aluno.usuarioId],
+        `A aula de ${fmtDateBR(r.data)} às ${fmtTime(r.data)} (${r.sala.nome}), da sua solicitação aprovada, foi cancelada. Se precisar, faça uma nova solicitação.`,
+        "/solicitacoes"
+      )
+    }
   } catch (e) {
     return actionError(e)
   }

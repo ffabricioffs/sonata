@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useActionState } from "react"
 import { Input } from "@/components/ui/input"
+import { MaskedInput } from "@/components/masked-input"
 import { Textarea } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Field, FormAlert, SubmitButton } from "@/components/form-bits"
@@ -29,13 +30,13 @@ export function AlunoForm({ id, defaults = {} }: { id: string | null; defaults?:
           <Input id="email" name="email" type="email" defaultValue={d("email")} required />
         </Field>
         <Field label="Telefone" name="telefone" error={fe.telefone}>
-          <Input id="telefone" name="telefone" defaultValue={d("telefone")} placeholder="(11) 90000-0000" />
+          <MaskedInput mascara="telefone" id="telefone" name="telefone" defaultValue={d("telefone")} placeholder="(11) 90000-0000" />
         </Field>
         <Field label="Data de nascimento" name="dataNasc" error={fe.dataNasc}>
           <Input id="dataNasc" name="dataNasc" type="date" defaultValue={d("dataNasc")} />
         </Field>
-        <Field label="CPF" name="cpf" error={fe.cpf} hint="Com ou sem pontuação">
-          <Input id="cpf" name="cpf" defaultValue={d("cpf")} placeholder="000.000.000-00" />
+        <Field label="CPF" name="cpf" error={fe.cpf} hint="Digite só os números; a pontuação entra sozinha">
+          <MaskedInput mascara="cpf" id="cpf" name="cpf" defaultValue={d("cpf")} placeholder="000.000.000-00" />
         </Field>
       </div>
 
@@ -46,7 +47,7 @@ export function AlunoForm({ id, defaults = {} }: { id: string | null; defaults?:
             <Input id="responsavelNome" name="responsavelNome" defaultValue={d("responsavelNome")} />
           </Field>
           <Field label="Telefone do responsável" name="responsavelTelefone" error={fe.responsavelTelefone}>
-            <Input id="responsavelTelefone" name="responsavelTelefone" defaultValue={d("responsavelTelefone")} />
+            <MaskedInput mascara="telefone" id="responsavelTelefone" name="responsavelTelefone" defaultValue={d("responsavelTelefone")} />
           </Field>
         </div>
       </fieldset>

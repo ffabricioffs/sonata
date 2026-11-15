@@ -48,7 +48,7 @@ export default async function SolicitacoesPage({ searchParams }: { searchParams:
           const situacao = (
             <>
               <Badge variant={s.status === "PENDENTE" ? "outline" : s.status === "APROVADA" ? "default" : "destructive"}>{STATUS[s.status]}</Badge>
-              {s.status === "APROVADA" && s.reserva && <span className="block text-xs text-muted-foreground mt-1">{s.reserva.sala.nome}</span>}
+              {s.status === "APROVADA" && s.reserva && <span className="block text-xs text-muted-foreground mt-1">{s.reserva.sala.nome}{s.reserva.status === "CANCELADA" ? " · aula cancelada" : ""}</span>}
               {s.status === "REJEITADA" && s.justificativa && <span className="block text-xs text-muted-foreground mt-1">{s.justificativa}</span>}
             </>
           )

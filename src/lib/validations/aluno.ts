@@ -1,6 +1,7 @@
 import { z } from "zod"
 import { senhaForte } from "./senha"
 import { ageFrom } from "@/lib/dates"
+import { mascaraTelefone } from "@/lib/mascaras"
 
 const onlyDigits = (s: string) => s.replace(/\D/g, "")
 
@@ -25,17 +26,23 @@ export const cpfSchema = z
   .refine((v) => v.length === 11, "CPF inválido (11 dígitos)")
   .refine((v) => v.length !== 11 || cpfValido(v), "CPF inválido")
 
+/** Telefone: DDD + 8 ou 9 dígitos, gravado sempre no formato (11) 90000-0000. */
+export const telefoneSchema = z
+  .string()
+  .refine((v) => [10, 11].includes(onlyDigits(v).length), "Telefone inválido: informe DDD e número")
+  .transform(mascaraTelefone)
+
 const dataISO = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida")
 
 export const alunoFormSchema = z
   .object({
     nome: z.string().min(3, "Nome deve ter no mínimo 3 caracteres"),
     email: z.string().email("E-mail inválido").transform((v) => v.toLowerCase()),
-    telefone: z.string().optional(),
+    telefone: telefoneSchema.optional(),
     dataNasc: dataISO.optional(),
     cpf: cpfSchema.optional(),
     responsavelNome: z.string().optional(),
-    responsavelTelefone: z.string().optional(),
+    responsavelTelefone: telefoneSchema.optional(),
     observacoes: z.string().max(500, "Máximo de 500 caracteres").optional(),
     senha: senhaForte.optional(),
   })

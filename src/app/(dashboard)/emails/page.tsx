@@ -8,11 +8,16 @@ const fmt = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "s
 /** Caixa de saída: os e-mails que o sistema enviou (recuperação de senha). Só a equipe vê. */
 export default async function EmailsPage() {
   const user = await requireUser(STAFF)
-  // A Secretaria não vê os e-mails de contas de administrador (o link daria acesso à conta)
+  // A Secretaria não vê os e-mails de contas de administrador
   const ocultos =
     user.role === "ADMIN" ? [] : (await prisma.usuario.findMany({ where: { role: "ADMIN" }, select: { email: true } })).map((u) => u.email)
   const lista = await prisma.emailEnviado.findMany({ where: { para: { notIn: ocultos } }, orderBy: { createdAt: "desc" }, take: 50 })
   const real = Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM)
+  // O link de redefinição dá acesso à conta: só o administrador vê o link; a Secretaria vê que o e-mail saiu.
+  const verLink = user.role === "ADMIN"
+  const OCULTO = "[link de redefinição visível só para o administrador]"
+  const corpoVisivel = (corpo: string, link: string | null) =>
+    verLink ? corpo : (link ? corpo.split(link).join(OCULTO) : corpo).replace(/https?:\/\/\S*redefinir-senha\S*/g, OCULTO)
   return (
     <div className="space-y-6">
       <PageHeader
@@ -20,7 +25,7 @@ export default async function EmailsPage() {
         description={
           real
             ? "Mensagens que o sistema enviou. Elas também saem de verdade pela Resend."
-            : "Caixa de saída simulada: os e-mails ficam registrados aqui, sem envio real (as contas de demonstração usam endereços @exemplo.com)."
+            : `Caixa de saída simulada: os e-mails ficam registrados aqui, sem envio real (as contas de demonstração usam endereços @exemplo.com).${verLink ? "" : " Os links de redefinição de senha aparecem só para o administrador."}`
         }
       />
       <Card>
@@ -38,8 +43,8 @@ export default async function EmailsPage() {
                   {m.enviado ? " · enviado" : " · só na caixa de saída"}
                 </span>
               </summary>
-              <pre className="mt-3 whitespace-pre-wrap break-words rounded-md bg-muted p-3 font-sans text-sm">{m.corpo}</pre>
-              {m.link && (
+              <pre className="mt-3 whitespace-pre-wrap break-words rounded-md bg-muted p-3 font-sans text-sm">{corpoVisivel(m.corpo, m.link)}</pre>
+              {verLink && m.link && (
                 <a href={m.link} className="mt-2 inline-block text-primary hover:underline">
                   Abrir o link do e-mail
                 </a>

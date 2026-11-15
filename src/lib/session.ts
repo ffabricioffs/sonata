@@ -1,3 +1,4 @@
+import { cache } from "react"
 import { redirect } from "next/navigation"
 import type { UserRole } from "@prisma/client"
 import { auth } from "@/auth"
@@ -20,14 +21,15 @@ export const MSG_ACESSO_DESATIVADO = "Seu acesso foi desativado. Procure a secre
  * R02 / RNF005 — o JWT vale 30 dias, então o perfil e o "ativo" são conferidos no banco a cada
  * página e a cada Server Action. Usuário inativado (ou excluído) perde o acesso na hora,
  * e mudanças de perfil passam a valer sem novo login.
+ * cache(): o layout e a página da mesma requisição compartilham uma única consulta.
  */
-async function usuarioAtual() {
+const usuarioAtual = cache(async () => {
   const session = await auth()
   if (!session?.user?.id) return { session: null, ativo: false as const }
   const u = await prisma.usuario.findUnique({ where: { id: session.user.id }, select: { ativo: true, role: true, nome: true, email: true } })
   if (!u || !u.ativo) return { session, ativo: false as const }
   return { session, ativo: true as const, user: { ...session.user, role: u.role, name: u.nome, email: u.email } }
-}
+})
 
 /** Para páginas: exige login ativo e (opcionalmente) um dos perfis; senão redireciona. */
 export async function requireUser(roles?: Role[]) {

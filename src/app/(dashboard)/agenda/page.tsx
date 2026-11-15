@@ -29,7 +29,7 @@ type Item = {
   meu?: boolean
 }
 
-export default async function AgendaPage({ searchParams }: { searchParams: Promise<{ data?: string; vista?: string }> }) {
+export default async function AgendaPage({ searchParams }: { searchParams: Promise<{ data?: string; vista?: string; hora?: string }> }) {
   const user = await requireUser()
   const sp = await searchParams
   const hoje = todayStr()
@@ -37,6 +37,9 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
   const data = isDateStr(sp.data) ? sp.data : diaSemanaOf(hoje) === "DOMINGO" ? addDays(hoje, 1) : hoje
   const vista = sp.vista === "semana" ? "semana" : "dia"
   const agoraMin = nowMinutes()
+  // Horário consultado no quadro "Salas no dia": o da URL; hoje, sem horário, vale o de agora
+  const horaValida = typeof sp.hora === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(sp.hora)
+  const hora = horaValida ? sp.hora! : data === hoje ? fromMin(agoraMin) : ""
   const staff = isStaff(user.role)
 
   // Escopo do usuário
@@ -56,7 +59,7 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
   const semana = DIAS_UTEIS_E_SABADO.map((_, i) => addDays(seg, i))
   const faixa = { gte: dayRange(seg).gte, lte: dayRange(addDays(seg, 6)).lte }
 
-  const [aulasSemana, reservasSemana, salas, turmasAtivas, aulasTodasDia, reservasTodasDia] = await Promise.all([
+  const [aulasSemana, reservasSemana, salas, turmasAtivas, aulasTodasDia, reservasTodasDia, turmasGeradasNaSemana] = await Promise.all([
     prisma.aula.findMany({
       where: { data: faixa, turma: turmaWhere },
       include: { turma: { include: { instrumento: true, sala: true, professor: { include: { usuario: true } } } } },
@@ -64,9 +67,10 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
     }),
     prisma.reserva.findMany({ where: { data: faixa, status: "ATIVA", ...reservaWhere }, include: { sala: true, professor: { include: { usuario: true } }, criadoPor: true }, orderBy: { data: "asc" } }),
     prisma.sala.findMany({ orderBy: { nome: "asc" } }),
-    staff ? prisma.turma.findMany({ where: { ativo: true, diaSemana: diaSemanaOf(data) }, orderBy: { horario: "asc" } }) : Promise.resolve([]),
+    prisma.turma.findMany({ where: { ativo: true, diaSemana: diaSemanaOf(data) }, orderBy: { horario: "asc" } }),
     prisma.aula.findMany({ where: { data: dayRange(data) }, include: { turma: true } }),
     prisma.reserva.findMany({ where: { data: dayRange(data), status: "ATIVA" } }),
+    prisma.aula.findMany({ where: { data: faixa }, select: { turmaId: true }, distinct: ["turmaId"] }),
   ])
 
   const diaKey = (d: Date) => d.toISOString().slice(0, 10)
@@ -104,12 +108,30 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
   for (const i of itens) contagem.set(i.dia, (contagem.get(i.dia) ?? 0) + 1)
   const itensDia = itens.filter((i) => i.dia === data)
 
-  // Ocupação das salas no dia (visão da escola inteira)
-  const ocupacaoSala = new Map<string, string[]>()
-  const add = (salaId: string | null, h: string) => salaId && ocupacaoSala.set(salaId, [...(ocupacaoSala.get(salaId) ?? []), h])
-  for (const a of aulasTodasDia) add(a.turma.salaId, fmtTime(a.data))
-  for (const r of reservasTodasDia) add(r.salaId, fmtTime(r.data))
-  const livres = salas.filter((s) => !salaEmManutencao(s, data) && !ocupacaoSala.has(s.id)).length
+  // Ocupação das salas no dia (escola inteira): turmas ativas do dia da semana, mesmo sem aula gerada,
+  // aulas já geradas e reservas ativas, cada uma com início e fim.
+  type Faixa = { inicio: number; fim: number; titulo: string }
+  const ocupacaoSala = new Map<string, Faixa[]>()
+  const add = (salaId: string | null, inicio: string, dur: number, titulo: string) => {
+    if (!salaId) return
+    ocupacaoSala.set(salaId, [...(ocupacaoSala.get(salaId) ?? []), { inicio: toMin(inicio), fim: toMin(inicio) + dur, titulo }])
+  }
+  // Semana já gerada para a turma: valem as aulas (uma aula excluída libera a sala); senão, vale o horário fixo
+  const semanaGerada = new Set(turmasGeradasNaSemana.map((a) => a.turmaId))
+  for (const t of turmasAtivas) if (!semanaGerada.has(t.id)) add(t.salaId, t.horario, t.duracaoMin, t.nome)
+  for (const a of aulasTodasDia) add(a.turma.salaId, fmtTime(a.data), a.turma.duracaoMin, a.turma.nome)
+  for (const r of reservasTodasDia) add(r.salaId, fmtTime(r.data), r.duracaoMin, TIPO_RESERVA_LABEL[r.tipo])
+  for (const faixas of ocupacaoSala.values()) faixas.sort((a, b) => a.inicio - b.inicio)
+  const horaMin = hora ? toMin(hora) : null
+  const estadoDaSala = (s: (typeof salas)[number]) => {
+    const faixas = ocupacaoSala.get(s.id) ?? []
+    if (salaEmManutencao(s, data)) return { estado: "Manutenção" as const, faixas, agora: undefined }
+    if (horaMin === null) return { estado: faixas.length ? ("Ocupada em parte" as const) : ("Livre" as const), faixas, agora: undefined }
+    const agora = faixas.find((f) => f.inicio <= horaMin && horaMin < f.fim)
+    return { estado: agora ? ("Ocupada" as const) : ("Livre" as const), faixas, agora }
+  }
+  const estados = salas.map((s) => ({ sala: s, ...estadoDaSala(s) }))
+  const livres = estados.filter((e) => e.estado === "Livre").length
 
   const nav = (d: string) => `/agenda?data=${d}${vista === "semana" ? "&vista=semana" : ""}`
 
@@ -190,25 +212,47 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
           )}
         </div>
 
-        <Card className="h-fit min-w-0">
-          <CardHeader>
+        <Card className="h-fit min-w-0 order-first xl:order-none">
+          <CardHeader className="space-y-2">
             <CardTitle className="text-base">Salas no dia</CardTitle>
-            <p className="text-xs text-muted-foreground">{ocupacaoSala.size} ocupada(s) · {livres} livre(s)</p>
+            <form method="get" action="/agenda" className="flex items-end gap-2">
+              <input type="hidden" name="data" value={data} />
+              {vista === "semana" && <input type="hidden" name="vista" value="semana" />}
+              <label className="grid gap-1 text-xs text-muted-foreground">
+                Livre às
+                <input key={`${data}-${hora}`} type="time" name="hora" defaultValue={hora} className="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground" />
+              </label>
+              <Button type="submit" size="sm" variant="outline">Ver</Button>
+            </form>
+            <p className="text-xs text-muted-foreground">
+              {hora ? `Às ${hora}: ` : "No dia: "}
+              {livres} livre(s) · {salas.length - livres} ocupada(s) ou em manutenção
+            </p>
           </CardHeader>
           <CardContent className="space-y-2">
-            {salas.map((s) => {
-              const horas = ocupacaoSala.get(s.id) ?? []
-              const estado = salaEmManutencao(s, data) ? "Manutenção" : horas.length > 0 ? "Ocupada" : "Livre"
-              return (
-                <div key={s.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
-                  <div>
-                    <p className="font-medium">{s.nome}</p>
-                    {horas.length > 0 && <p className="text-xs text-muted-foreground tabular-nums">{[...horas].sort().join(", ")}</p>}
-                  </div>
-                  <Badge variant={estado === "Livre" ? "secondary" : estado === "Manutenção" ? "destructive" : "default"}>{estado}</Badge>
+            {estados.map(({ sala: s, estado, faixas, agora }) => (
+              <div key={s.id} className="rounded-md border px-3 py-2 text-sm">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-medium">{s.nome}</p>
+                  <Badge variant={estado === "Livre" ? "secondary" : estado === "Manutenção" ? "destructive" : "default"}>
+                    {estado === "Ocupada" && agora ? `Ocupada até ${fromMin(agora.fim)}` : estado}
+                  </Badge>
                 </div>
-              )
-            })}
+                {estado === "Manutenção" ? (
+                  <p className="text-xs text-muted-foreground">Em manutenção neste dia</p>
+                ) : faixas.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">Livre o dia todo</p>
+                ) : (
+                  <ul className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                    {faixas.map((f, i) => (
+                      <li key={i} className={cn("tabular-nums", agora === f && "font-semibold text-foreground")}>
+                        {fromMin(f.inicio)}–{fromMin(f.fim)}{staff ? ` · ${f.titulo}` : ""}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))}
           </CardContent>
         </Card>
       </div>

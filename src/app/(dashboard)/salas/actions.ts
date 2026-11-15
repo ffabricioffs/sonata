@@ -20,7 +20,17 @@ export async function salvarSala(id: string | null, _prev: FormState, fd: FormDa
       status: v.status,
       manutencaoAte: v.status === "MANUTENCAO" && v.manutencaoAte ? new Date(`${v.manutencaoAte}T00:00:00.000Z`) : null,
     }
-    if (id) await prisma.sala.update({ where: { id }, data })
+    if (id) {
+      // R07 — não deixa a capacidade ficar abaixo das vagas de uma turma ativa que usa a sala
+      const maior = await prisma.turma.findFirst({ where: { salaId: id, ativo: true, vagas: { gt: v.capacidade } }, orderBy: { vagas: "desc" } })
+      if (maior) {
+        return {
+          error: `A turma ${maior.nome} usa esta sala com ${maior.vagas} vagas; a capacidade não pode ser menor que isso.`,
+          fieldErrors: { capacidade: `Mínimo ${maior.vagas}` },
+        }
+      }
+      await prisma.sala.update({ where: { id }, data })
+    }
     else await prisma.sala.create({ data })
   } catch (e) {
     return actionError(e, { entity: "sala" })

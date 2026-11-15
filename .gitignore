@@ -1,0 +1,19 @@
+# dependências e build
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# credenciais: nunca versionar
+.env
+.env*.local
+
+# saídas de assistentes / dumps de banco (R18: o seed oficial é prisma/seed.ts)
+Claude outputs/
+*.sql.bak
+/dumps/
+
+# sistema
+.DS_Store
+.vercel

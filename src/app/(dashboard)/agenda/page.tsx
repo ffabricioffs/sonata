@@ -2,7 +2,7 @@ import Link from "next/link"
 import type { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { requireUser, isStaff } from "@/lib/session"
-import { todayStr, isDateStr, dayRange, addDays, weekStart, diaSemanaOf, fmtTime, fmtLongDate, fromMin, toMin, DIA_LABEL, DIAS_UTEIS_E_SABADO } from "@/lib/dates"
+import { todayStr, isDateStr, dayRange, addDays, weekStart, diaSemanaOf, fmtTime, fmtLongDate, fromMin, toMin, nowMinutes, DIA_LABEL, DIAS_UTEIS_E_SABADO } from "@/lib/dates"
 import { salaEmManutencao } from "@/lib/conflitos"
 import { TIPO_RESERVA_LABEL } from "@/lib/validations/reserva"
 import { PageHeader, DataTable, EmptyRow } from "@/components/page-header"
@@ -35,6 +35,7 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
   const hoje = todayStr()
   const data = isDateStr(sp.data) ? sp.data : hoje
   const vista = sp.vista === "semana" ? "semana" : "dia"
+  const agoraMin = nowMinutes()
   const staff = isStaff(user.role)
 
   // Escopo do usuário
@@ -160,7 +161,7 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
                   <td className="px-4 py-3 text-muted-foreground">{i.responsavel}</td>
                   <td className="px-4 py-3 text-muted-foreground">{i.sala}</td>
                   <td className="px-4 py-3"><Badge variant={i.status === "Agendada" || i.status === "Reserva" ? "outline" : "secondary"}>{i.status}</Badge></td>
-                  <td className="px-4 py-3">{i.aulaId && <AulaActions id={i.aulaId} realizada={i.status === "Realizada"} podeMarcar={staff || !!i.meu} podeExcluir={staff} />}</td>
+                  <td className="px-4 py-3">{i.aulaId && <AulaActions id={i.aulaId} realizada={i.status === "Realizada"} futura={i.dia > hoje || (i.dia === hoje && toMin(i.inicio) > agoraMin)} podeMarcar={staff || !!i.meu} podeExcluir={staff} />}</td>
                 </tr>
               ))}
             </DataTable>

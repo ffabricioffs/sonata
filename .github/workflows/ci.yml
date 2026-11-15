@@ -1,0 +1,25 @@
+name: CI
+
+# R22 — typecheck (e lint, informativo) a cada push e pull request
+on:
+  push:
+  pull_request:
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      # o postinstall roda "prisma generate"; não precisa de banco
+      - run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      # "next lint" não existe mais no Next 16 e o projeto ainda não tem eslint.config.*;
+      # o passo roda para mostrar a situação, mas não reprova o PR até o lint ser configurado.
+      - name: Lint (informativo)
+        run: npm run lint
+        continue-on-error: true

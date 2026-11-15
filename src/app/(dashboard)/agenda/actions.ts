@@ -4,7 +4,13 @@ import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/prisma"
 import { assertRole, STAFF } from "@/lib/session"
 import { actionError, type FormState } from "@/lib/form-state"
-import { addDays, dayRange, diaSemanaOf, isDateStr, toDbDateTime, weekStart, DIAS_UTEIS_E_SABADO } from "@/lib/dates"
+import { addDays, dayRange, diaSemanaOf, fmtTime, isDateStr, nowMinutes, todayStr, toDbDateTime, toMin, weekStart, DIAS_UTEIS_E_SABADO } from "@/lib/dates"
+
+/** A aula ainda não começou? (data e horário de parede de São Paulo, como no banco) */
+function aulaFutura(data: Date) {
+  const dia = data.toISOString().slice(0, 10), hoje = todayStr()
+  return dia > hoje || (dia === hoje && toMin(fmtTime(data)) > nowMinutes())
+}
 
 export async function criarAula(data: string, turmaId: string): Promise<FormState> {
   try {
@@ -55,6 +61,8 @@ export async function alternarRealizada(aulaId: string, observacao?: string): Pr
     const a = await prisma.aula.findUnique({ where: { id: aulaId }, include: { turma: { include: { professor: true } } } })
     if (!a) return { error: "Aula não encontrada." }
     if (user.role === "PROFESSOR" && a.turma.professor.usuarioId !== user.id) return { error: "Você só pode atualizar aulas das suas turmas." }
+    // R09 — só dá para marcar como realizada uma aula que já começou (desfazer continua liberado)
+    if (!a.realizada && aulaFutura(a.data)) return { error: "Esta aula ainda não aconteceu. Só é possível marcá-la como realizada a partir do horário de início." }
     await prisma.aula.update({ where: { id: aulaId }, data: { realizada: !a.realizada, observacao: a.realizada ? null : observacao?.trim().slice(0, 300) || null } })
     revalidatePath("/agenda")
     return { ok: true }

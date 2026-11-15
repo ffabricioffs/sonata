@@ -3,11 +3,26 @@ import { ageFrom } from "@/lib/dates"
 
 const onlyDigits = (s: string) => s.replace(/\D/g, "")
 
-/** CPF: aceita com ou sem máscara e grava só os 11 dígitos. */
+/** Confere os dois dígitos verificadores do CPF e recusa sequências repetidas (111.111.111-11). */
+export function cpfValido(cpf: string): boolean {
+  if (!/^\d{11}$/.test(cpf) || /^(\d)\1{10}$/.test(cpf)) return false
+  const dv = (base: string) => {
+    let soma = 0
+    for (let i = 0; i < base.length; i++) soma += Number(base[i]) * (base.length + 1 - i)
+    const resto = (soma * 10) % 11
+    return resto === 10 ? 0 : resto
+  }
+  const d1 = dv(cpf.slice(0, 9))
+  const d2 = dv(cpf.slice(0, 9) + d1)
+  return d1 === Number(cpf[9]) && d2 === Number(cpf[10])
+}
+
+/** CPF: aceita com ou sem máscara, grava só os 11 dígitos e valida os dígitos verificadores (RF005/RF012). */
 export const cpfSchema = z
   .string()
   .transform(onlyDigits)
   .refine((v) => v.length === 11, "CPF inválido (11 dígitos)")
+  .refine((v) => v.length !== 11 || cpfValido(v), "CPF inválido")
 
 const dataISO = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida")
 

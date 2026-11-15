@@ -21,6 +21,7 @@ const ROTAS: { prefixo: string; perfis: UserRole[] }[] = [
   { prefixo: "/instrumentos", perfis: ["ADMIN", "SECRETARIA"] },
   { prefixo: "/reservas", perfis: ["ADMIN", "SECRETARIA", "PROFESSOR"] },
   { prefixo: "/emails", perfis: ["ADMIN", "SECRETARIA"] },
+  { prefixo: "/mensalidades", perfis: ["ADMIN", "SECRETARIA", "ALUNO"] },
 ]
 
 export const { handlers, auth, signIn, signOut } = NextAuth({

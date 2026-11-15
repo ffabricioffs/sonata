@@ -26,6 +26,10 @@ O `role` fica no JWT; o `src/auth.ts` (callback `authorized`) bloqueia rotas por
 
 Regras de negócio: choque de horário de professor e de sala (entre turmas e também entre turmas e reservas), sala em manutenção, vagas da turma limitadas à capacidade da sala, matrícula única por aluno/turma, aluno sem duas aulas no mesmo horário (turma, aula extra ou reposição), responsável obrigatório para menores de 18 anos, CPF único e com dígitos verificadores válidos, aula só pode ser marcada como realizada depois do horário de início. Usuário inativado perde o acesso na hora, mesmo com a sessão aberta.
 
+### Mensalidades
+
+Em **Mensalidades**, a Secretaria e o Administrador veem as mensalidades de um mês, com os totais previsto, recebido, em aberto e em atraso. Ali eles registram uma mensalidade, geram as do mês para todos os alunos ativos com matrícula ativa (quem já tem é ignorado), quitam com a data de hoje, desfazem a quitação, editam e excluem as que estão em aberto. Cada aluno tem no máximo uma mensalidade por mês: o banco garante isso, e a tela avisa "Já existe uma mensalidade deste aluno para MM/AAAA.". O aluno vê só as suas, sem ações. Mensalidade em aberto conta como vínculo ativo na exclusão do aluno.
+
 ### Recuperação de senha
 
 Na tela de login, "Esqueci minha senha" leva a `/recuperar-senha`. O sistema responde sempre com a mesma mensagem, exista ou não a conta, e manda um link de uso único que vale 60 minutos (o banco guarda só o hash SHA-256 do token). Em `/redefinir-senha` o usuário define a nova senha, que precisa ter no mínimo 8 caracteres, com letra maiúscula, letra minúscula e número. A mesma regra vale nos cadastros de aluno e de professor.

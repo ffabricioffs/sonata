@@ -21,3 +21,24 @@ jobs:
       # ESLint 9 + eslint-config-next 16 (eslint.config.mjs)
       - name: Lint
         run: npm run lint
+
+  # Roteiro de testes: testes unitários e de integração das Server Actions (tests/, vitest.config.ts)
+  testes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # vitest não entra no package.json para não mudar as dependências do deploy
+      - run: npm i --no-save vitest@3
+      - name: Testes (relatório JSON e resumo)
+        run: npx vitest run --reporter=default --reporter=json --outputFile=vitest-resultado.json
+      - name: Guardar o relatório
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vitest-resultado
+          path: vitest-resultado.json

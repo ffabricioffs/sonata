@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { assertRole } from "@/lib/session"
 import { solicitacaoFormSchema, LIMITE_PENDENTES } from "@/lib/validations/reserva"
 import { actionError, formToObject, zodFieldErrors, type FormState, erroValidacao } from "@/lib/form-state"
-import { fmtTime, toDbDateTime, todayStr, fmtDateBR, nowMinutes, toMin } from "@/lib/dates"
+import { dayRange, fmtTime, toDbDateTime, todayStr, fmtDateBR, nowMinutes, toMin } from "@/lib/dates"
 import { ocupacoesDoDia, conflita, salaEmManutencao, sugerirHorarios, conflitoDoAluno } from "@/lib/conflitos"
 import { notificar, idsDaEquipe } from "@/lib/notificar"
 import { redirectOk } from "@/lib/flash"
@@ -28,6 +28,21 @@ export async function solicitarAula(_prev: SolicitacaoState, fd: FormData): Prom
     if (v.data < todayStr()) return { error: "A data da aula não pode ser anterior a hoje.", fieldErrors: { data: "Data anterior a hoje" } }
 
     if (v.data === todayStr() && toMin(v.inicio) <= nowMinutes()) return { error: "O horário solicitado já passou. Escolha um horário futuro.", fieldErrors: { inicio: "Horário já passou" } }
+
+    // Reposição: a aula perdida é obrigatória, tem de ser de uma turma do aluno, já ter passado
+    // e não pode ter outra reposição pendente ou aprovada (uma reposição por aula perdida)
+    if (v.tipo === "REPOSICAO") {
+      if (!v.aulaPerdidaId) return { error: "Selecione a aula perdida para pedir a reposição.", fieldErrors: { aulaPerdidaId: "Selecione a aula perdida" } }
+      const perdida = await prisma.aula.findUnique({ where: { id: v.aulaPerdidaId } })
+      const matriculado = perdida ? await prisma.matricula.findFirst({ where: { alunoId: aluno.id, turmaId: perdida.turmaId } }) : null
+      if (!perdida || !matriculado) return { error: "A aula selecionada não é de uma turma sua.", fieldErrors: { aulaPerdidaId: "Aula inválida" } }
+      if (perdida.data >= dayRange(todayStr()).gte) return { error: "A reposição só pode ser pedida para uma aula que já passou.", fieldErrors: { aulaPerdidaId: "Aula ainda não aconteceu" } }
+      const ja = await prisma.solicitacaoAula.findFirst({ where: { alunoId: aluno.id, tipo: "REPOSICAO", aulaPerdidaId: perdida.id, status: { in: ["PENDENTE", "APROVADA"] } } })
+      if (ja) {
+        const msg = ja.status === "APROVADA" ? "Esta aula já tem uma reposição aprovada." : "Já existe um pedido de reposição pendente para esta aula."
+        return { error: msg, fieldErrors: { aulaPerdidaId: msg } }
+      }
+    }
 
     // RF031 — limite de solicitações pendentes
     const pendentes = await prisma.solicitacaoAula.count({ where: { alunoId: aluno.id, status: "PENDENTE" } })
@@ -100,6 +115,15 @@ export async function aprovarSolicitacao(id: string, salaId: string): Promise<Fo
     if (!salaId) return { error: "Selecione a sala para a aula." }
     const dataStr = s.data.toISOString().slice(0, 10)
     const inicio = fmtTime(s.data)
+    // Não aprova pedido cuja data já passou (a aula não pode ser marcada depois de acontecer)
+    if (dataStr < todayStr() || (dataStr === todayStr() && toMin(inicio) <= nowMinutes())) {
+      return { error: "A data desta solicitação já passou. Rejeite-a e peça ao aluno um novo horário." }
+    }
+    // Uma reposição aprovada por aula perdida
+    if (s.tipo === "REPOSICAO" && s.aulaPerdidaId) {
+      const outra = await prisma.solicitacaoAula.findFirst({ where: { id: { not: s.id }, alunoId: s.alunoId, tipo: "REPOSICAO", aulaPerdidaId: s.aulaPerdidaId, status: "APROVADA" } })
+      if (outra) return { error: `Esta aula perdida já tem uma reposição aprovada (${fmtDateBR(outra.data)} às ${fmtTime(outra.data)}). Rejeite esta solicitação.` }
+    }
     const sala = await prisma.sala.findUnique({ where: { id: salaId } })
     const ocs = await ocupacoesDoDia(dataStr)
     if (!sala || salaEmManutencao(sala, dataStr) || conflita(ocs, { salaId, professorId: s.professorId }, inicio, s.duracaoMin)) {

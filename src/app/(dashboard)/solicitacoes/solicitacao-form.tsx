@@ -42,8 +42,8 @@ export function SolicitacaoForm({ professores, aulas, semTelefone }: { professor
           </Select>
         </Field>
         {tipo === "REPOSICAO" && (
-          <Field label="Aula perdida" name="aulaPerdidaId" error={fe.aulaPerdidaId} className="space-y-2 sm:col-span-2">
-            <Select key={v("aulaPerdidaId") ?? ""} id="aulaPerdidaId" name="aulaPerdidaId" defaultValue={v("aulaPerdidaId") ?? ""}>
+          <Field label="Aula perdida *" name="aulaPerdidaId" error={fe.aulaPerdidaId} className="space-y-2 sm:col-span-2">
+            <Select key={v("aulaPerdidaId") ?? ""} id="aulaPerdidaId" name="aulaPerdidaId" defaultValue={v("aulaPerdidaId") ?? ""} required>
               <option value="">Selecione a aula perdida…</option>
               {aulas.map((a) => <option key={a.id} value={a.id}>{a.nome}</option>)}
             </Select>

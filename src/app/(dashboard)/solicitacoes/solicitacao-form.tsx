@@ -16,6 +16,14 @@ export function SolicitacaoForm({ professores, aulas, semTelefone }: { professor
   const fe = state.fieldErrors ?? {}
   const v = (k: string) => state.values?.[k]
   const [tipo, setTipo] = useState(v("tipo") ?? "")
+  // A cada resposta do servidor o formulário é reiniciado: o campo volta ao valor enviado
+  const [resposta, setResposta] = useState(state)
+  const [rodada, setRodada] = useState(0)
+  if (state !== resposta) {
+    setResposta(state)
+    setTipo(v("tipo") ?? "")
+    setRodada((r) => r + 1)
+  }
   const [inicio, setInicio] = useState(v("inicio") ?? "")
   const sugestoes = (state as SolicitacaoState).sugestoes ?? []
 
@@ -35,7 +43,7 @@ export function SolicitacaoForm({ professores, aulas, semTelefone }: { professor
           </Select>
         </Field>
         <Field label="Motivo da solicitação *" name="tipo" error={fe.tipo}>
-          <Select id="tipo" name="tipo" value={tipo} onChange={(e) => setTipo(e.target.value)} required>
+          <Select key={`tipo-${rodada}`} id="tipo" name="tipo" defaultValue={v("tipo") ?? ""} onChange={(e) => setTipo(e.target.value)} required>
             <option value="">Selecione…</option>
             <option value="REPOSICAO">Reposição de falta</option>
             <option value="EXTRA">Aula complementar</option>

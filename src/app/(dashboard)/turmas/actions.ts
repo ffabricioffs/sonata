@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { assertRole, STAFF } from "@/lib/session"
 import { turmaFormSchema } from "@/lib/validations/turma"
 import { actionError, formToObject, type FormState, erroValidacao } from "@/lib/form-state"
-import { overlaps, proximaDataDoDia } from "@/lib/dates"
+import { overlaps, proximaOcorrencia } from "@/lib/dates"
 import { sincronizarAulasDaTurma } from "@/lib/aulas"
 import { MSG_CONFLITO_PROF_OU_SALA, salaEmManutencao, reservaQueConflitaComTurma, quandoReserva } from "@/lib/conflitos"
 import { redirectOk } from "@/lib/flash"
@@ -30,7 +30,7 @@ export async function salvarTurma(id: string | null, _prev: FormState, fd: FormD
     if (salaId) {
       const sala = await prisma.sala.findUnique({ where: { id: salaId } })
       if (!sala) return { error: "Sala não encontrada." }
-      if (salaEmManutencao(sala, proximaDataDoDia(v.diaSemana))) return { error: MSG_CONFLITO_PROF_OU_SALA, fieldErrors: { salaId: "Sala em manutenção" } }
+      if (salaEmManutencao(sala, proximaOcorrencia(v.diaSemana, v.horario))) return { error: MSG_CONFLITO_PROF_OU_SALA, fieldErrors: { salaId: "Sala em manutenção" } }
       // R07 — a turma não pode ter mais vagas do que a sala comporta
       if (v.vagas > sala.capacidade) {
         return {

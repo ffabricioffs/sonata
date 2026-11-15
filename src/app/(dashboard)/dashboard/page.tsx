@@ -91,8 +91,8 @@ export default async function DashboardPage() {
       />
       {kpis}
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <Card className="min-w-0">
           <CardHeader>
             <CardTitle className="text-base">Aulas de hoje</CardTitle>
           </CardHeader>
@@ -108,7 +108,7 @@ export default async function DashboardPage() {
                     {a.turma.sala?.nome ?? "Sem sala"} · Prof. {a.turma.professor.usuario.nome}
                   </p>
                 </div>
-                <Badge variant={a.realizada ? "secondary" : "outline"}>{a.realizada ? "Realizada" : "Agendada"}</Badge>
+                <Badge className="shrink-0" variant={a.realizada ? "secondary" : "outline"}>{a.realizada ? "Realizada" : "Agendada"}</Badge>
               </div>
             ))}
             <Link href="/agenda" className="text-sm text-primary hover:underline inline-block pt-1">
@@ -117,7 +117,7 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="min-w-0">
           <CardHeader>
             <CardTitle className="text-base">{isStaff(user.role) ? "Turmas ativas" : "Minhas turmas"}</CardTitle>
           </CardHeader>
@@ -131,7 +131,7 @@ export default async function DashboardPage() {
                     {DIA_LABEL[t.diaSemana]} {t.horario} · {t.sala?.nome ?? "Sem sala"}
                   </p>
                 </div>
-                <Badge variant="outline">
+                <Badge variant="outline" className="shrink-0">
                   {t._count.matriculas}/{t.vagas}
                 </Badge>
               </div>

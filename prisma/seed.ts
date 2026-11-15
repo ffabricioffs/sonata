@@ -5,6 +5,7 @@
  *   SEED_DATE=2026-11-30 npx prisma db seed   # data de referência da apresentação
  *
  * Todas as contas de demonstração usam a senha 123456 (apenas para a apresentação).
+ * Os CPFs dos alunos de demonstração são fictícios, mas com dígitos verificadores válidos.
  * Aulas são geradas de 3 semanas antes até 2 semanas depois de SEED_DATE; "realizada" vale só para datas anteriores a hoje.
  */
 import type { DiaSemana } from "@prisma/client"
@@ -64,12 +65,13 @@ async function main() {
   const inst = async (nome: string) => (await prisma.instrumento.findUniqueOrThrow({ where: { nome } })).id
 
   // ---------- Salas ----------
+  // A capacidade de cada sala cobre as vagas das turmas que a usam (regra R07: vagas <= capacidade).
   const salas = [
-    { id: "seed_sala_1", nome: "Sala 1", capacidade: 4, status: "DISPONIVEL" as const, recursos: "Piano de armário, estantes de partitura" },
-    { id: "seed_sala_2", nome: "Sala 2", capacidade: 4, status: "DISPONIVEL" as const, recursos: "Violões, amplificador, estantes" },
-    { id: "seed_sala_3", nome: "Sala 3", capacidade: 3, status: "DISPONIVEL" as const, recursos: "Teclado, espelho, caixa de som" },
+    { id: "seed_sala_1", nome: "Sala 1", capacidade: 8, status: "DISPONIVEL" as const, recursos: "Piano de armário, estantes de partitura" },
+    { id: "seed_sala_2", nome: "Sala 2", capacidade: 8, status: "DISPONIVEL" as const, recursos: "Violões, amplificador, estantes" },
+    { id: "seed_sala_3", nome: "Sala 3", capacidade: 8, status: "DISPONIVEL" as const, recursos: "Teclado, espelho, caixa de som" },
     { id: "seed_sala_4", nome: "Sala 4", capacidade: 6, status: "MANUTENCAO" as const, recursos: "Bateria acústica, isolamento acústico", manutencaoAte: toDbDateTime(addDays(REF, 7), "00:00") },
-    { id: "seed_sala_5", nome: "Sala 5", capacidade: 4, status: "DISPONIVEL" as const, recursos: "Amplificadores, pedais, guitarras" },
+    { id: "seed_sala_5", nome: "Sala 5", capacidade: 8, status: "DISPONIVEL" as const, recursos: "Amplificadores, pedais, guitarras" },
     { id: "seed_sala_6", nome: "Auditório", capacidade: 40, status: "DISPONIVEL" as const, recursos: "Piano de cauda, palco, 40 lugares" },
   ]
   for (const s of salas) {
@@ -79,14 +81,14 @@ async function main() {
 
   // ---------- Alunos ----------
   const alunos = [
-    { id: "seed_aluno_001", nome: "Lucas Ferreira", email: "lucas.ferreira@exemplo.com", telefone: "(11) 90000-1001", dataNasc: "2010-03-14", cpf: "00000000101", resp: ["Marta Ferreira", "(11) 98800-1001"], login: true },
-    { id: "seed_aluno_002", nome: "Beatriz Santos", email: "beatriz.santos@exemplo.com", telefone: "(11) 90000-1002", dataNasc: "2008-07-22", cpf: "00000000102", login: true },
-    { id: "seed_aluno_003", nome: "Pedro Almeida", email: "pedro.almeida@exemplo.com", telefone: "(11) 90000-1003", dataNasc: "1998-11-05", cpf: "00000000103", login: true },
-    { id: "seed_aluno_004", nome: "Isabela Rocha", email: "isabela.rocha@exemplo.com", telefone: "(11) 90000-1004", dataNasc: "2001-01-18", cpf: "00000000104" },
-    { id: "seed_aluno_005", nome: "Gabriel Lima", email: "gabriel.lima@exemplo.com", telefone: "(11) 90000-1005", dataNasc: "2012-09-30", cpf: "00000000105", resp: ["Paulo Lima", "(11) 98800-1005"] },
-    { id: "seed_aluno_006", nome: "Sofia Martins", email: "sofia.martins@exemplo.com", telefone: "(11) 90000-1006", dataNasc: "1995-05-11", cpf: "00000000106" },
-    { id: "seed_aluno_007", nome: "Enzo Ribeiro", email: "enzo.ribeiro@exemplo.com", telefone: "(11) 90000-1007", dataNasc: "2006-12-02", cpf: "00000000107" },
-    { id: "seed_aluno_008", nome: "Valentina Gomes", email: "valentina.gomes@exemplo.com", telefone: "(11) 90000-1008", dataNasc: "2014-04-09", cpf: "00000000108", resp: ["Carla Gomes", "(11) 98800-1008"] },
+    { id: "seed_aluno_001", nome: "Lucas Ferreira", email: "lucas.ferreira@exemplo.com", telefone: "(11) 90000-1001", dataNasc: "2010-03-14", cpf: "12345670169", resp: ["Marta Ferreira", "(11) 98800-1001"], login: true },
+    { id: "seed_aluno_002", nome: "Beatriz Santos", email: "beatriz.santos@exemplo.com", telefone: "(11) 90000-1002", dataNasc: "2008-07-22", cpf: "12345670240", login: true },
+    { id: "seed_aluno_003", nome: "Pedro Almeida", email: "pedro.almeida@exemplo.com", telefone: "(11) 90000-1003", dataNasc: "1998-11-05", cpf: "12345670320", login: true },
+    { id: "seed_aluno_004", nome: "Isabela Rocha", email: "isabela.rocha@exemplo.com", telefone: "(11) 90000-1004", dataNasc: "2001-01-18", cpf: "12345670401" },
+    { id: "seed_aluno_005", nome: "Gabriel Lima", email: "gabriel.lima@exemplo.com", telefone: "(11) 90000-1005", dataNasc: "2012-09-30", cpf: "12345670592", resp: ["Paulo Lima", "(11) 98800-1005"] },
+    { id: "seed_aluno_006", nome: "Sofia Martins", email: "sofia.martins@exemplo.com", telefone: "(11) 90000-1006", dataNasc: "1995-05-11", cpf: "12345670673" },
+    { id: "seed_aluno_007", nome: "Enzo Ribeiro", email: "enzo.ribeiro@exemplo.com", telefone: "(11) 90000-1007", dataNasc: "2006-12-02", cpf: "12345670754" },
+    { id: "seed_aluno_008", nome: "Valentina Gomes", email: "valentina.gomes@exemplo.com", telefone: "(11) 90000-1008", dataNasc: "2014-04-09", cpf: "12345670835", resp: ["Carla Gomes", "(11) 98800-1008"] },
   ]
   for (const a of alunos) {
     let usuarioId: string | undefined
@@ -99,13 +101,14 @@ async function main() {
       usuarioId = u.id
     }
     const dados = {
-      telefone: a.telefone, responsavelNome: a.resp?.[0] ?? null, responsavelTelefone: a.resp?.[1] ?? null,
+      // o CPF também é regravado: os CPFs antigos do seed (000.000.001-01…) não passam na validação dos dígitos (R05)
+      telefone: a.telefone, cpf: a.cpf, responsavelNome: a.resp?.[0] ?? null, responsavelTelefone: a.resp?.[1] ?? null,
       ...(usuarioId ? { usuarioId } : {}),
     }
     await prisma.aluno.upsert({
       where: { id: a.id },
       update: dados,
-      create: { id: a.id, nome: a.nome, email: a.email, dataNasc: new Date(`${a.dataNasc}T00:00:00.000Z`), cpf: a.cpf, ...dados },
+      create: { id: a.id, nome: a.nome, email: a.email, dataNasc: new Date(`${a.dataNasc}T00:00:00.000Z`), ...dados },
     })
   }
 

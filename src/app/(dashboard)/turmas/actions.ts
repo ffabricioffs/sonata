@@ -7,7 +7,7 @@ import { turmaFormSchema } from "@/lib/validations/turma"
 import { actionError, formToObject, zodFieldErrors, type FormState, erroValidacao } from "@/lib/form-state"
 import { overlaps, proximaDataDoDia } from "@/lib/dates"
 import { sincronizarAulasDaTurma } from "@/lib/aulas"
-import { MSG_CONFLITO_PROF_OU_SALA, salaEmManutencao } from "@/lib/conflitos"
+import { MSG_CONFLITO_PROF_OU_SALA, salaEmManutencao, reservaQueConflitaComTurma, quandoReserva } from "@/lib/conflitos"
 import { redirectOk } from "@/lib/flash"
 
 export async function salvarTurma(id: string | null, _prev: FormState, fd: FormData): Promise<FormState> {
@@ -31,6 +31,19 @@ export async function salvarTurma(id: string | null, _prev: FormState, fd: FormD
       const sala = await prisma.sala.findUnique({ where: { id: salaId } })
       if (!sala) return { error: "Sala não encontrada." }
       if (salaEmManutencao(sala, proximaDataDoDia(v.diaSemana))) return { error: MSG_CONFLITO_PROF_OU_SALA, fieldErrors: { salaId: "Sala em manutenção" } }
+      // R07 — a turma não pode ter mais vagas do que a sala comporta
+      if (v.vagas > sala.capacidade) {
+        return {
+          error: `O número de vagas (${v.vagas}) é maior que a capacidade da ${sala.nome} (${sala.capacidade} pessoas).`,
+          fieldErrors: { vagas: `Máximo ${sala.capacidade} nesta sala` },
+        }
+      }
+    }
+
+    // R21 — a turma também não pode cair por cima de uma reserva ativa (mesma sala ou mesmo professor)
+    const reserva = await reservaQueConflitaComTurma({ diaSemana: v.diaSemana, horario: v.horario, duracaoMin: v.duracaoMin, salaId, professorId: v.professorId })
+    if (reserva) {
+      return { error: `${MSG_CONFLITO_PROF_OU_SALA} Há uma reserva em ${quandoReserva(reserva)}; cancele ou reagende a reserva antes.` }
     }
 
     const prof = await prisma.professor.findUnique({ where: { id: v.professorId }, include: { usuario: true } })

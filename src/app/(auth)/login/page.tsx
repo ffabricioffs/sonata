@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -21,6 +21,13 @@ export default function LoginPage() {
   const [senha, setSenha] = useState("")
   const [erro, setErro] = useState("")
   const [carregando, setCarregando] = useState(false)
+
+  // Vindo de /sair: a sessão foi encerrada porque o usuário foi inativado (R02)
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("inativo") === "1") {
+      setErro("Seu acesso foi desativado. Procure a secretaria.")
+    }
+  }, [])
 
   const demos = process.env.NEXT_PUBLIC_DEMO_LOGINS === "true"
   const DEMO_ACCOUNTS = [

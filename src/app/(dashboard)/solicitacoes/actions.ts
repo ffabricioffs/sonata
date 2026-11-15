@@ -6,7 +6,7 @@ import { assertRole } from "@/lib/session"
 import { solicitacaoFormSchema, LIMITE_PENDENTES } from "@/lib/validations/reserva"
 import { actionError, formToObject, zodFieldErrors, type FormState, erroValidacao } from "@/lib/form-state"
 import { fmtTime, toDbDateTime, todayStr, fmtDateBR, nowMinutes, toMin } from "@/lib/dates"
-import { ocupacoesDoDia, conflita, salaEmManutencao, sugerirHorarios } from "@/lib/conflitos"
+import { ocupacoesDoDia, conflita, salaEmManutencao, sugerirHorarios, conflitoDoAluno } from "@/lib/conflitos"
 import { notificar, idsDaEquipe } from "@/lib/notificar"
 import { redirectOk } from "@/lib/flash"
 
@@ -33,13 +33,24 @@ export async function solicitarAula(_prev: SolicitacaoState, fd: FormData): Prom
     const pendentes = await prisma.solicitacaoAula.count({ where: { alunoId: aluno.id, status: "PENDENTE" } })
     if (pendentes >= LIMITE_PENDENTES) return { error: MSG_LIMITE }
 
+    // R19 — o aluno não pode pedir aula no horário de uma turma em que está matriculado
+    const choqueAluno = await conflitoDoAluno(aluno.id, v.data, v.inicio, v.duracaoMin, undefined, "você")
+    if (choqueAluno) {
+      const sugestoes = await sugerirHorarios(v.professorId, v.data, v.inicio, v.duracaoMin, aluno.id)
+      return {
+        error: choqueAluno + (sugestoes.length ? " Escolha um dos horários sugeridos." : " Tente outra data."),
+        fieldErrors: { inicio: "Você já tem aula neste horário" },
+        sugestoes,
+      }
+    }
+
     // RF032 — horário indisponível na agenda do professor (ou nenhuma sala livre): sugere alternativas
     const ocs = await ocupacoesDoDia(v.data)
     const salas = await prisma.sala.findMany()
     const professorLivre = !conflita(ocs, { professorId: v.professorId }, v.inicio, v.duracaoMin)
     const haSala = salas.some((s) => !salaEmManutencao(s, v.data) && !conflita(ocs, { salaId: s.id }, v.inicio, v.duracaoMin))
     if (!professorLivre || !haSala) {
-      const sugestoes = await sugerirHorarios(v.professorId, v.data, v.inicio, v.duracaoMin)
+      const sugestoes = await sugerirHorarios(v.professorId, v.data, v.inicio, v.duracaoMin, aluno.id)
       return {
         error: "O horário solicitado não está disponível na agenda do professor." + (sugestoes.length ? " Escolha um dos horários sugeridos." : " Não há horários alternativos neste dia; tente outra data."),
         fieldErrors: { inicio: "Horário indisponível" },
@@ -94,6 +105,9 @@ export async function aprovarSolicitacao(id: string, salaId: string): Promise<Fo
     if (!sala || salaEmManutencao(sala, dataStr) || conflita(ocs, { salaId, professorId: s.professorId }, inicio, s.duracaoMin)) {
       return { error: MSG_INDISPONIVEL_APROVACAO }
     }
+    // R20 — não aprova se o aluno já tiver aula de turma (ou outra aula aprovada) no mesmo horário
+    const choqueAluno = await conflitoDoAluno(s.alunoId, dataStr, inicio, s.duracaoMin, { solicitacaoId: s.id })
+    if (choqueAluno) return { error: `${choqueAluno} Rejeite a solicitação ou combine outro horário com o aluno.` }
     await prisma.$transaction(async (tx) => {
       const reserva = await tx.reserva.create({
         data: {

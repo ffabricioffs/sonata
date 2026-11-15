@@ -24,7 +24,7 @@ Aplicação web (TCC) para administrar alunos, professores, turmas e agenda de u
 
 O `role` fica no JWT; o `src/auth.ts` (callback `authorized`) bloqueia rotas por perfil e cada página/Server Action confere o perfil de novo (`requireUser` / `assertRole`). Usuários inativos não conseguem entrar.
 
-Regras de negócio: choque de horário de professor e de sala, sala em manutenção, vagas da turma, matrícula única por aluno/turma, responsável obrigatório para menores de 18 anos, CPF único.
+Regras de negócio: choque de horário de professor e de sala (entre turmas e também entre turmas e reservas), sala em manutenção, vagas da turma limitadas à capacidade da sala, matrícula única por aluno/turma, aluno sem duas aulas no mesmo horário (turma, aula extra ou reposição), responsável obrigatório para menores de 18 anos, CPF único e com dígitos verificadores válidos, aula só pode ser marcada como realizada depois do horário de início. Usuário inativado perde o acesso na hora, mesmo com a sessão aberta.
 
 ## Primeiros passos
 
@@ -98,4 +98,12 @@ prisma/
 
 ### Banco de dados
 
-Depois de atualizar o código, rode no Neon (SQL Editor) o arquivo `prisma/migrations/20261108120000_reservas_solicitacoes_professor/migration.sql` e, para os dados de demonstração, `npx prisma db seed` (ou o SQL de seed enviado junto). O `npm run build` não altera o banco.
+Depois de atualizar o código, aplique as migrações com `npx prisma migrate deploy` e, para os dados de demonstração, rode `npx prisma db seed`. O seed em TypeScript (`prisma/seed.ts`) é o único oficial: ele grava as senhas com bcrypt. Não use dumps em SQL para popular o banco. O `npm run build` não altera o banco.
+
+Para conferir se sobrou alguma senha sem bcrypt (R01), rode no Neon:
+
+```sql
+SELECT email FROM "Usuario" WHERE "senhaHash" !~ '^\$2';
+```
+
+Se a consulta voltar alguma linha, entre uma vez com esse usuário (o login converte o hash para bcrypt) ou rode o seed de novo.

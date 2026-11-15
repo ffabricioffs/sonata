@@ -1,0 +1,30 @@
+name: Atualizar lock do ESLint (uso único)
+
+# Roda uma vez neste branch: atualiza eslint-config-next para a v16 no package-lock.json,
+# mostra o resultado do lint no log e grava package.json + package-lock.json no branch.
+on:
+  push:
+    branches: [lint-next16]
+    paths: [".github/workflows/atualizar-lock-eslint.yml"]
+
+permissions:
+  contents: write
+
+jobs:
+  lock:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --save-dev eslint-config-next@^16 --no-audit --no-fund
+      - name: Lint (resultado no log)
+        run: npx eslint . || true
+      - name: Gravar package.json e package-lock.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git diff --cached --quiet || git commit -m "Atualiza eslint-config-next para a v16 (package-lock.json)"
+          git push

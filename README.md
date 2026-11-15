@@ -26,6 +26,12 @@ O `role` fica no JWT; o `src/auth.ts` (callback `authorized`) bloqueia rotas por
 
 Regras de negócio: choque de horário de professor e de sala (entre turmas e também entre turmas e reservas), sala em manutenção, vagas da turma limitadas à capacidade da sala, matrícula única por aluno/turma, aluno sem duas aulas no mesmo horário (turma, aula extra ou reposição), responsável obrigatório para menores de 18 anos, CPF único e com dígitos verificadores válidos, aula só pode ser marcada como realizada depois do horário de início. Usuário inativado perde o acesso na hora, mesmo com a sessão aberta.
 
+### Recuperação de senha
+
+Na tela de login, "Esqueci minha senha" leva a `/recuperar-senha`. O sistema responde sempre com a mesma mensagem, exista ou não a conta, e manda um link de uso único que vale 60 minutos (o banco guarda só o hash SHA-256 do token). Em `/redefinir-senha` o usuário define a nova senha, que precisa ter no mínimo 8 caracteres, com letra maiúscula, letra minúscula e número. A mesma regra vale nos cadastros de aluno e de professor.
+
+Todo e-mail do sistema fica registrado na tela **E-mails enviados** (só para Administrador e Secretaria; a Secretaria não vê os e-mails de contas de administrador). Assim o fluxo funciona na demonstração, com as contas @exemplo.com. Para enviar de verdade, configure na Vercel `RESEND_API_KEY` e `EMAIL_FROM` (um remetente de domínio verificado na [Resend](https://resend.com)). `APP_URL` é opcional e fixa o endereço usado no link; sem ela, vale o domínio de produção da Vercel.
+
 ## Primeiros passos
 
 ```bash

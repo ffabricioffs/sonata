@@ -1,5 +1,6 @@
 import { z } from "zod"
 import { cpfSchema } from "./aluno"
+import { senhaForte } from "./senha"
 
 export const professorFormSchema = z.object({
   nome: z.string().min(3, "Nome deve ter no mínimo 3 caracteres"),
@@ -9,7 +10,7 @@ export const professorFormSchema = z.object({
   endereco: z.string({ required_error: "Informe o endereço completo" }).min(5, "Informe o endereço completo"),
   registroProfissional: z.string().optional(),
   bio: z.string().max(500, "Máximo de 500 caracteres").optional(),
-  senha: z.string().min(6, "A senha deve ter ao menos 6 caracteres").optional(),
+  senha: senhaForte.optional(),
 })
 
 export type ProfessorFormInput = z.infer<typeof professorFormSchema>

@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { senhaForte } from "./senha"
 import { ageFrom } from "@/lib/dates"
 
 const onlyDigits = (s: string) => s.replace(/\D/g, "")
@@ -36,7 +37,7 @@ export const alunoFormSchema = z
     responsavelNome: z.string().optional(),
     responsavelTelefone: z.string().optional(),
     observacoes: z.string().max(500, "Máximo de 500 caracteres").optional(),
-    senha: z.string().min(6, "A senha deve ter ao menos 6 caracteres").optional(),
+    senha: senhaForte.optional(),
   })
   .superRefine((v, ctx) => {
     if (v.dataNasc) {

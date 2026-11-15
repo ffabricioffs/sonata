@@ -3,6 +3,7 @@
 import { use, useState } from "react"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -15,7 +16,7 @@ import {
 } from "@/components/ui/card"
 import { Music } from "lucide-react"
 
-export default function LoginPage({ searchParams }: { searchParams: Promise<{ inativo?: string }> }) {
+export default function LoginPage({ searchParams }: { searchParams: Promise<{ inativo?: string; senha?: string }> }) {
   const router = useRouter()
   const [email, setEmail] = useState("")
   const [senha, setSenha] = useState("")
@@ -23,7 +24,9 @@ export default function LoginPage({ searchParams }: { searchParams: Promise<{ in
   const [carregando, setCarregando] = useState(false)
 
   // Vindo de /sair: a sessão foi encerrada porque o usuário foi inativado (R02)
-  const inativo = use(searchParams).inativo === "1"
+  const sp = use(searchParams)
+  const inativo = sp.inativo === "1"
+  const senhaRedefinida = sp.senha === "redefinida"
   const mensagemErro = erro || (inativo ? "Seu acesso foi desativado. Procure a secretaria." : "")
 
   const demos = process.env.NEXT_PUBLIC_DEMO_LOGINS === "true"
@@ -93,7 +96,10 @@ export default function LoginPage({ searchParams }: { searchParams: Promise<{ in
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="senha">Senha</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="senha">Senha</Label>
+                  <Link href="/recuperar-senha" className="text-xs text-primary hover:underline">Esqueci minha senha</Link>
+                </div>
                 <Input
                   id="senha"
                   type="password"
@@ -105,6 +111,12 @@ export default function LoginPage({ searchParams }: { searchParams: Promise<{ in
                   disabled={carregando}
                 />
               </div>
+
+              {senhaRedefinida && !mensagemErro && (
+                <p className="rounded-md border border-emerald-600/30 bg-emerald-600/10 px-3 py-2 text-sm text-emerald-800" role="status">
+                  Senha redefinida. Entre com a nova senha.
+                </p>
+              )}
 
               {/* Feedback de erro */}
               {mensagemErro && (

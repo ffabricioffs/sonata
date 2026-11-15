@@ -16,6 +16,7 @@ import {
   BookmarkCheck,
   MessageSquarePlus,
   Bell,
+  Mail,
   LogOut,
   Menu,
   X,
@@ -42,6 +43,7 @@ const navLinks: { href: string; label: string; icon: typeof Users; roles: Role[]
   { href: "/reservas", label: "Reservas", icon: BookmarkCheck, roles: [...STAFF, "PROFESSOR"] },
   { href: "/solicitacoes", label: "Aulas extras", icon: MessageSquarePlus, roles: ALL },
   { href: "/notificacoes", label: "Notificações", icon: Bell, roles: ALL },
+  { href: "/emails", label: "E-mails enviados", icon: Mail, roles: STAFF },
   // Pagamentos: módulo previsto como complementar (implementação posterior)
 ]
 const ROLE_LABEL: Record<string, string> = { ADMIN: "Administrador", SECRETARIA: "Secretaria", PROFESSOR: "Professor", ALUNO: "Aluno" }

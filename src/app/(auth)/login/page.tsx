@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { use, useState } from "react"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/card"
 import { Music } from "lucide-react"
 
-export default function LoginPage() {
+export default function LoginPage({ searchParams }: { searchParams: Promise<{ inativo?: string }> }) {
   const router = useRouter()
   const [email, setEmail] = useState("")
   const [senha, setSenha] = useState("")
@@ -23,11 +23,8 @@ export default function LoginPage() {
   const [carregando, setCarregando] = useState(false)
 
   // Vindo de /sair: a sessão foi encerrada porque o usuário foi inativado (R02)
-  useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("inativo") === "1") {
-      setErro("Seu acesso foi desativado. Procure a secretaria.")
-    }
-  }, [])
+  const inativo = use(searchParams).inativo === "1"
+  const mensagemErro = erro || (inativo ? "Seu acesso foi desativado. Procure a secretaria." : "")
 
   const demos = process.env.NEXT_PUBLIC_DEMO_LOGINS === "true"
   const DEMO_ACCOUNTS = [
@@ -110,9 +107,9 @@ export default function LoginPage() {
               </div>
 
               {/* Feedback de erro */}
-              {erro && (
+              {mensagemErro && (
                 <p className="text-sm text-destructive font-medium" role="alert">
-                  {erro}
+                  {mensagemErro}
                 </p>
               )}
 

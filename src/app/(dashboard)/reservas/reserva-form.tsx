@@ -20,16 +20,23 @@ export function ReservaForm({ id, defaults = {}, salas, professores }: { id: str
   const d = (k: keyof ReservaDefaults) => state.values?.[k] ?? defaults[k]
   const [salaId, setSalaId] = useState(d("salaId") ?? "")
   const [data, setData] = useState(d("data") ?? "")
-  const [ocupacao, setOcupacao] = useState<{ inicio: string; fim: string; descricao: string }[] | null>(null)
+  type Itens = { inicio: string; fim: string; descricao: string }[]
+  const [consulta, setConsulta] = useState<{ chave: string; itens: Itens | null } | null>(null)
+  const chave = salaId && data ? `${salaId}|${data}` : ""
 
   useEffect(() => {
+    if (!chave) return
     let vivo = true
-    if (salaId && data) ocupacaoDaSala(salaId, data).then((r) => vivo && setOcupacao(r)).catch(() => vivo && setOcupacao(null))
-    else setOcupacao(null)
+    ocupacaoDaSala(salaId, data)
+      .then((r) => vivo && setConsulta({ chave, itens: r }))
+      .catch(() => vivo && setConsulta({ chave, itens: null }))
     return () => {
       vivo = false
     }
-  }, [salaId, data, state])
+  }, [chave, salaId, data, state])
+
+  // Só mostra o resultado da sala/data atuais; enquanto a nova consulta não volta, aparece "Carregando…"
+  const ocupacao = consulta && consulta.chave === chave ? consulta.itens : null
 
   return (
     <form action={action} noValidate className="space-y-6 max-w-3xl">

@@ -33,7 +33,8 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
   const user = await requireUser()
   const sp = await searchParams
   const hoje = todayStr()
-  const data = isDateStr(sp.data) ? sp.data : hoje
+  // Domingo não tem aula: sem data na URL, a Agenda abre na segunda seguinte (semana que vem)
+  const data = isDateStr(sp.data) ? sp.data : diaSemanaOf(hoje) === "DOMINGO" ? addDays(hoje, 1) : hoje
   const vista = sp.vista === "semana" ? "semana" : "dia"
   const agoraMin = nowMinutes()
   const staff = isStaff(user.role)

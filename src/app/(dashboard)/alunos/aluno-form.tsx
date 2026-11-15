@@ -56,7 +56,7 @@ export function AlunoForm({ id, defaults = {} }: { id: string | null; defaults?:
       </Field>
 
       {!defaults.temAcesso && (
-        <Field label="Senha inicial de acesso (opcional)" name="senha" error={fe.senha} hint="Se preenchida, cria o login do aluno com o e-mail acima.">
+        <Field label="Senha inicial de acesso (opcional)" name="senha" error={fe.senha} hint="Se preenchida, cria o login do aluno com o e-mail acima. Mínimo de 8 caracteres, com letra maiúscula, letra minúscula e número.">
           <Input id="senha" name="senha" type="password" autoComplete="new-password" />
         </Field>
       )}

@@ -64,8 +64,9 @@ model Usuario {
   professor Professor?
   aluno     Aluno?
 
-  reservas     Reserva[]
-  notificacoes Notificacao[]
+  reservas          Reserva[]
+  notificacoes      Notificacao[]
+  tokensRecuperacao TokenRecuperacao[]
 }
 
 model Aluno {
@@ -242,4 +243,30 @@ model Notificacao {
   link      String?
   lida      Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+/// Link de recuperação de senha (RF035). Só o hash SHA-256 do token é guardado; vale 1 hora e uma única vez.
+model TokenRecuperacao {
+  id        String    @id @default(cuid())
+  usuarioId String
+  usuario   Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiraEm  DateTime
+  usadoEm   DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([usuarioId])
+}
+
+/// Caixa de saída: todo e-mail do sistema fica registrado aqui (e sai pela Resend quando há chave configurada).
+model EmailEnviado {
+  id        String   @id @default(cuid())
+  para      String
+  assunto   String
+  corpo     String
+  link      String?
+  enviado   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
 }

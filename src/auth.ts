@@ -20,6 +20,7 @@ const ROTAS: { prefixo: string; perfis: UserRole[] }[] = [
   { prefixo: "/salas", perfis: ["ADMIN", "SECRETARIA"] },
   { prefixo: "/instrumentos", perfis: ["ADMIN", "SECRETARIA"] },
   { prefixo: "/reservas", perfis: ["ADMIN", "SECRETARIA", "PROFESSOR"] },
+  { prefixo: "/emails", perfis: ["ADMIN", "SECRETARIA"] },
 ]
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -55,7 +56,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     authorized({ request, auth }) {
       const { pathname } = request.nextUrl
-      if (pathname === "/login") return true
+      if (["/login", "/recuperar-senha", "/redefinir-senha"].includes(pathname)) return true
       if (!auth?.user) return false
 
       const regra = ROTAS.find((r) => pathname === r.prefixo || pathname.startsWith(r.prefixo + "/"))

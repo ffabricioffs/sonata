@@ -27,7 +27,7 @@ export async function salvarProfessor(id: string | null, _prev: FormState, fd: F
         await tx.professor.update({ where: { id }, data: perfil })
       })
     } else {
-      if (!senha) return { error: "Corrija os campos destacados.", fieldErrors: { senha: "Informe a senha inicial (mín. 6 caracteres)" } }
+      if (!senha) return { error: "Corrija os campos destacados.", fieldErrors: { senha: "Informe a senha inicial (mínimo de 8 caracteres, com maiúscula, minúscula e número)" } }
       await prisma.usuario.create({
         data: { nome, email, role: "PROFESSOR", senhaHash: await hashPassword(senha), professor: { create: perfil } },
       })

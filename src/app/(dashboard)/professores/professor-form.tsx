@@ -39,7 +39,7 @@ export function ProfessorForm({ id, defaults = {} }: { id: string | null; defaul
           label={id ? "Nova senha (opcional)" : "Senha inicial *"}
           name="senha"
           error={fe.senha}
-          hint={id ? "Preencha apenas para redefinir a senha." : "Mínimo de 6 caracteres."}
+          hint={id ? "Preencha apenas para redefinir a senha (mínimo de 8 caracteres, com maiúscula, minúscula e número)." : "Mínimo de 8 caracteres, com letra maiúscula, letra minúscula e número."}
         >
           <Input id="senha" name="senha" type="password" autoComplete="new-password" required={!id} />
         </Field>

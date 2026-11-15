@@ -17,6 +17,7 @@ import {
   MessageSquarePlus,
   Bell,
   Mail,
+  Wallet,
   LogOut,
   Menu,
   X,
@@ -42,9 +43,9 @@ const navLinks: { href: string; label: string; icon: typeof Users; roles: Role[]
   { href: "/agenda", label: "Agenda", icon: CalendarDays, roles: ALL },
   { href: "/reservas", label: "Reservas", icon: BookmarkCheck, roles: [...STAFF, "PROFESSOR"] },
   { href: "/solicitacoes", label: "Aulas extras", icon: MessageSquarePlus, roles: ALL },
+  { href: "/mensalidades", label: "Mensalidades", icon: Wallet, roles: [...STAFF, "ALUNO"] },
   { href: "/notificacoes", label: "Notificações", icon: Bell, roles: ALL },
   { href: "/emails", label: "E-mails enviados", icon: Mail, roles: STAFF },
-  // Pagamentos: módulo previsto como complementar (implementação posterior)
 ]
 const ROLE_LABEL: Record<string, string> = { ADMIN: "Administrador", SECRETARIA: "Secretaria", PROFESSOR: "Professor", ALUNO: "Aluno" }
 

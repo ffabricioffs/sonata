@@ -77,11 +77,13 @@ export async function excluirAluno(id: string): Promise<FormState> {
     await assertRole(STAFF)
     const a = await prisma.aluno.findUnique({ where: { id } })
     if (!a) return { error: "Aluno não encontrado." }
-    const [matriculas, pendentes] = await Promise.all([
+    // Mensalidade em aberto também é vínculo ativo (só as quitadas saem junto com o aluno)
+    const [matriculas, pendentes, emAberto] = await Promise.all([
       prisma.matricula.count({ where: { alunoId: id, ativo: true } }),
       prisma.solicitacaoAula.count({ where: { alunoId: id, status: "PENDENTE" } }),
+      prisma.pagamento.count({ where: { alunoId: id, pago: false } }),
     ])
-    if (matriculas > 0 || pendentes > 0) return { error: "Não é possível excluir o aluno. Existem vínculos ativos associados a este registro." }
+    if (matriculas > 0 || pendentes > 0 || emAberto > 0) return { error: "Não é possível excluir o aluno. Existem vínculos ativos associados a este registro." }
     await prisma.$transaction(async (tx) => {
       await tx.solicitacaoAula.deleteMany({ where: { alunoId: id } })
       await tx.matricula.deleteMany({ where: { alunoId: id } })

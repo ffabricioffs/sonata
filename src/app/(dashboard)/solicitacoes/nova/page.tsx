@@ -23,7 +23,15 @@ export default async function NovaSolicitacaoPage() {
     include: { turma: true },
     orderBy: { data: "desc" },
   })
-  const aulas = aulasPassadas.map((a) => ({ id: a.id, nome: `${fmtDateBR(a.data)} ${fmtTime(a.data)} — ${a.turma.nome}` }))
+  // Uma reposição por aula perdida: some da lista a aula que já tem pedido pendente ou aprovado
+  const jaPedidas = aluno
+    ? await prisma.solicitacaoAula.findMany({
+        where: { alunoId: aluno.id, tipo: "REPOSICAO", status: { in: ["PENDENTE", "APROVADA"] }, aulaPerdidaId: { not: null } },
+        select: { aulaPerdidaId: true },
+      })
+    : []
+  const usadas = new Set(jaPedidas.map((s) => s.aulaPerdidaId))
+  const aulas = aulasPassadas.filter((a) => !usadas.has(a.id)).map((a) => ({ id: a.id, nome: `${fmtDateBR(a.data)} ${fmtTime(a.data)} — ${a.turma.nome}` }))
   return (
     <div className="space-y-6">
       <PageHeader title="Solicitar aula extra" description="Peça uma aula complementar ou a reposição de uma falta. O professor analisará o pedido." />

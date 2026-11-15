@@ -107,3 +107,9 @@ export function proximaDataDoDia(dia: DiaSemanaKey, desde = todayStr()): string 
   for (let i = 0; i < 7 && diaSemanaOf(d) !== dia; i++) d = addDays(d, 1)
   return d
 }
+
+/** Data da próxima aula de uma turma: hoje, se for o dia e o horário ainda não passou; senão, a próxima semana. */
+export function proximaOcorrencia(dia: DiaSemanaKey, horario: string): string {
+  const d = proximaDataDoDia(dia)
+  return d === todayStr() && toMin(horario) <= nowMinutes() ? addDays(d, 7) : d
+}

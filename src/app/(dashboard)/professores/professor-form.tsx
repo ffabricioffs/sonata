@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useActionState } from "react"
 import { Input } from "@/components/ui/input"
+import { MaskedInput } from "@/components/masked-input"
 import { Textarea } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Field, FormAlert, SubmitButton } from "@/components/form-bits"
@@ -23,11 +24,11 @@ export function ProfessorForm({ id, defaults = {} }: { id: string | null; defaul
         <Field label="E-mail (login) *" name="email" error={fe.email}>
           <Input id="email" name="email" type="email" defaultValue={d("email")} required />
         </Field>
-        <Field label="CPF *" name="cpf" error={fe.cpf} hint="Com ou sem pontuação">
-          <Input id="cpf" name="cpf" defaultValue={d("cpf")} placeholder="000.000.000-00" required />
+        <Field label="CPF *" name="cpf" error={fe.cpf} hint="Digite só os números; a pontuação entra sozinha">
+          <MaskedInput mascara="cpf" id="cpf" name="cpf" defaultValue={d("cpf")} placeholder="000.000.000-00" required />
         </Field>
         <Field label="Telefone *" name="telefone" error={fe.telefone}>
-          <Input id="telefone" name="telefone" defaultValue={d("telefone")} required />
+          <MaskedInput mascara="telefone" id="telefone" name="telefone" defaultValue={d("telefone")} required />
         </Field>
         <Field label="Endereço completo *" name="endereco" error={fe.endereco} className="space-y-2 sm:col-span-2">
           <Input id="endereco" name="endereco" defaultValue={d("endereco")} placeholder="Rua, número, bairro, cidade" required />

@@ -18,7 +18,7 @@ export default async function ReservasPage({ searchParams }: { searchParams: Pro
   const reservas = await prisma.reserva.findMany({
     where: { ...(staff ? {} : { criadoPorId: user.id }), ...(historico ? {} : { data: { gte: hoje }, status: "ATIVA" }) },
     orderBy: { data: historico ? "desc" : "asc" },
-    include: { sala: true, criadoPor: true, professor: { include: { usuario: true } } },
+    include: { sala: true, criadoPor: true, professor: { include: { usuario: true } }, solicitacao: { select: { id: true } } },
     take: 100,
   })
   return (
@@ -49,7 +49,7 @@ export default async function ReservasPage({ searchParams }: { searchParams: Pro
                 {r.status === "ATIVA" && (
                   <div className="flex items-start justify-end gap-2">
                     {staff && <Button asChild variant="ghost" size="sm"><Link href={`/reservas/editar?id=${r.id}`}>Reagendar</Link></Button>}
-                    <ActionButton action={cancelarReserva.bind(null, r.id)} confirmText="Cancelar esta reserva? O horário ficará livre para novos agendamentos.">Cancelar</ActionButton>
+                    <ActionButton action={cancelarReserva.bind(null, r.id)} confirmText={r.solicitacao ? "Cancelar esta reserva? Ela veio de uma solicitação aprovada: o aluno será avisado e o horário ficará livre." : "Cancelar esta reserva? O horário ficará livre para novos agendamentos."}>Cancelar</ActionButton>
                   </div>
                 )}
               </td>

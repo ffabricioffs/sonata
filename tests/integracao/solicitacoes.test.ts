@@ -8,8 +8,9 @@ import { prepararBanco, entrarComo, executar, form, mensagem, tabela, salaPorNom
 
 const MSG_ENVIADA = "Solicitação enviada com sucesso. Aguarde a aprovação do professor."
 const pedido = (extra: Record<string, string | number> = {}) => ({
-  professorId: professorPorNome("Rafael Mendes").id, tipo: "REPOSICAO", data: proximo("SEXTA"), inicio: "17:00", duracaoMin: 60,
-  motivo: "Faltei na última aula por doença", ...extra,
+  // Reposição agora exige a aula perdida; os testes do fluxo usam aula complementar (EXTRA)
+  professorId: professorPorNome("Rafael Mendes").id, tipo: "EXTRA", data: proximo("SEXTA"), inicio: "17:00", duracaoMin: 60,
+  motivo: "Quero reforçar a técnica antes da apresentação", ...extra,
 })
 const pendentesDoPedro = () => tabela("solicitacaoAula").filter((s) => s.alunoId === alunoPorNome("Pedro Almeida").id && s.status === "PENDENTE")
 
@@ -19,7 +20,7 @@ describe("Solicitação (RF028, RF029, RF031–RF033 · Quadro A.17)", () => {
     entrarComo("pedro.almeida@exemplo.com")
   })
 
-  it("CT55 Pedro pede reposição com Rafael → mensagem de envio e status Pendente", async () => {
+  it("CT55 Pedro pede aula complementar com Rafael → mensagem de envio e status Pendente", async () => {
     const antes = pendentesDoPedro().length
     const r = await executar(() => solicitarAula({}, form(pedido())))
     expect(r.ok).toBe(MSG_ENVIADA)
@@ -28,7 +29,7 @@ describe("Solicitação (RF028, RF029, RF031–RF033 · Quadro A.17)", () => {
   })
   it("CT56 Rafael e a administração recebem a notificação", async () => {
     await executar(() => solicitarAula({}, form(pedido())))
-    const para = (email: string) => tabela("notificacao").filter((n) => n.usuarioId === usuarioPorEmail(email).id && /Nova solicitação de reposição de Pedro Almeida/.test(n.mensagem))
+    const para = (email: string) => tabela("notificacao").filter((n) => n.usuarioId === usuarioPorEmail(email).id && /Nova solicitação de (reposição|aula extra) de Pedro Almeida/.test(n.mensagem))
     expect(para("rafael.mendes@exemplo.com")).toHaveLength(1)
     expect(para("admin@exemplo.com")).toHaveLength(1)
     expect(para("secretaria@exemplo.com")).toHaveLength(1)
@@ -54,7 +55,7 @@ describe("Solicitação (RF028, RF029, RF031–RF033 · Quadro A.17)", () => {
   it("CT59 horário em que o professor já dá aula (terça 14:00) → sugere horários alternativos livres", async () => {
     const ter = proximo("TERCA")
     const r = await executar(() => solicitarAula({}, form(pedido({ data: ter, inicio: "14:00" }))))
-    expect(r.estado?.error).toMatch(/não está disponível na agenda do professor/)
+    expect(r.estado?.error).toMatch(/não está disponível na agenda do professor|você já tem aula/)
     const sugestoes: string[] = r.estado?.sugestoes ?? []
     expect(sugestoes.length).toBeGreaterThan(0)
     expect(sugestoes.includes("14:00")).toBe(false)

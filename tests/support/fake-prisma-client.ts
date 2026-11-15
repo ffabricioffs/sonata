@@ -31,7 +31,7 @@ const many = (model: string, fk: string): Rel => ({ model, kind: "many", from: "
 
 export const MODELS: Record<string, Model> = {
   usuario: {
-    rels: { professor: rev("professor", "usuarioId"), aluno: rev("aluno", "usuarioId"), reservas: many("reserva", "criadoPorId"), notificacoes: many("notificacao", "usuarioId") },
+    rels: { professor: rev("professor", "usuarioId"), aluno: rev("aluno", "usuarioId"), reservas: many("reserva", "criadoPorId"), notificacoes: many("notificacao", "usuarioId"), tokensRecuperacao: many("tokenRecuperacao", "usuarioId") },
     uniques: [["id"], ["email"]],
     defaults: () => ({ ...base(), ativo: true }),
     updatedAt: true,
@@ -86,6 +86,9 @@ export const MODELS: Record<string, Model> = {
     defaults: () => ({ ...base(), duracaoMin: 60, aulaPerdidaId: null, status: "PENDENTE", decididoPorId: null, decididoEm: null, justificativa: null, reservaId: null }),
   },
   notificacao: { rels: { usuario: one("usuario", "usuarioId") }, uniques: [["id"]], defaults: () => ({ ...base(), link: null, lida: false }) },
+  // Recuperação de senha (migração 20261115120000_recuperacao_senha)
+  tokenRecuperacao: { rels: { usuario: one("usuario", "usuarioId") }, uniques: [["id"], ["tokenHash"]], defaults: () => ({ ...base(), usadoEm: null }) },
+  emailEnviado: { rels: {}, uniques: [["id"]], defaults: () => ({ ...base(), link: null, enviado: false }) },
 }
 
 // Ações de exclusão das chaves estrangeiras, iguais às migrações (prisma/migrations/*)
@@ -96,6 +99,7 @@ const ON_DELETE: Record<string, "SetNull" | "Cascade"> = {
   "solicitacaoAula.reservaId": "SetNull",
   "solicitacaoAula.aulaPerdidaId": "SetNull",
   "notificacao.usuarioId": "Cascade",
+  "tokenRecuperacao.usuarioId": "Cascade",
 }
 
 export class PrismaError extends Error {
@@ -389,8 +393,17 @@ function delegate(model: string) {
     },
     async createMany(a: any) {
       const list = Array.isArray(a.data) ? a.data : [a.data]
-      list.forEach((d: any) => createRow(model, d))
-      return { count: list.length }
+      let count = 0
+      for (const d of list) {
+        try {
+          createRow(model, d)
+          count++
+        } catch (e: any) {
+          // skipDuplicates: ignora a linha que violaria um índice único (ON CONFLICT DO NOTHING)
+          if (!(a.skipDuplicates && e?.code === "P2002")) throw e
+        }
+      }
+      return { count }
     },
     async update(a: any) {
       const r = find(a.where)[0]

@@ -104,7 +104,8 @@ describe("Controle de acesso nas Server Actions (RNF005)", () => {
     entrarComo("secretaria@exemplo.com")
     await prisma.usuario.update({ where: { email: "secretaria@exemplo.com" }, data: { ativo: false } })
     const r = await executar(() => salvarAluno(null, {}, form(novoAluno)))
-    expect(mensagem(r)).toBe("Você não tem permissão para esta ação.")
+    // R02: a mensagem agora explica o motivo
+    expect(mensagem(r)).toBe("Seu acesso foi desativado. Procure a secretaria.")
   })
 })
 
@@ -114,7 +115,7 @@ describe("Recuperação de senha (RF035 · Quadro A.2)", () => {
     expect(/esqueci minha senha/i.test(fontes)).toBe(true)
   })
   it("CT07 existe a mensagem de link expirado", () => {
-    expect(fontes.includes("Link de recuperação expirado ou inválido")).toBe(true)
+    expect(fontes.includes("Este link de recuperação é inválido ou expirou. Solicite um novo.")).toBe(true)
   })
   it("CT08 a regra de senha forte (8+ caracteres, maiúsculas, minúsculas e números) é aplicada", () => {
     expect(existsSync("src/lib/validations/senha.ts") || /\[A-Z\]/.test(fontes)).toBe(true)

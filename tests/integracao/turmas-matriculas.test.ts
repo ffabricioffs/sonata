@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { salvarTurma } from "@/app/(dashboard)/turmas/actions"
 import { matricularAluno, desmatricularAluno, alternarAluno } from "@/app/(dashboard)/alunos/actions"
 import * as acoesAgenda from "@/app/(dashboard)/agenda/actions"
+import { addDays } from "@/lib/dates"
 import { prepararBanco, entrarComo, executar, form, mensagem, tabela, alunoPorNome, salaPorNome, turmaPorNome, professorPorNome, instrumentoPorNome, REF } from "../support/helpers"
 
 const MSG_CONFLITO = "Conflito de horário: o professor ou a sala não está disponível no período selecionado."
@@ -118,12 +119,22 @@ describe("Matrícula (RF021 / RF024 · Quadro A.13)", () => {
 describe("Aulas realizadas (RF023)", () => {
   beforeEach(prepararBanco)
   const aulaPiano = () => `aula_seed_turma_001_${REF().replace(/-/g, "")}`
+  // R09: só aula que já começou pode ser marcada; usa a segunda anterior à de referência
+  const aulaPassada = () => `aula_seed_turma_001_${addDays(REF(), -7).replace(/-/g, "")}`
 
-  it("CT46 Mariana marca a aula de segunda como realizada", async () => {
+  it("CT46 Mariana marca a aula de segunda (já passada) como realizada, com observação", async () => {
+    entrarComo("mariana.costa@exemplo.com")
+    await prisma.aula.update({ where: { id: aulaPassada() }, data: { realizada: false, observacao: null } })
+    const r = await executar(() => acoesAgenda.alternarRealizada(aulaPassada(), "Revisão de escalas"))
+    expect(r.estado?.ok).toBe(true)
+    const a = tabela("aula").find((x) => x.id === aulaPassada())
+    expect([a?.realizada, a?.observacao]).toEqual([true, "Revisão de escalas"])
+  })
+  it("R09 aula futura não pode ser marcada como realizada", async () => {
     entrarComo("mariana.costa@exemplo.com")
     const r = await executar(() => acoesAgenda.alternarRealizada(aulaPiano()))
-    expect(r.estado?.ok).toBe(true)
-    expect(tabela("aula").find((a) => a.id === aulaPiano())?.realizada).toBe(true)
+    expect(mensagem(r)).toMatch(/^Esta aula ainda não aconteceu/)
+    expect(tabela("aula").find((x) => x.id === aulaPiano())?.realizada).toBe(false)
   })
   it("CT46 a observação da aula pode ser registrada junto (RF023)", async () => {
     entrarComo("mariana.costa@exemplo.com")

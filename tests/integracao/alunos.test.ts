@@ -4,7 +4,8 @@ import { prisma } from "@/lib/prisma"
 import { salvarAluno, excluirAluno } from "@/app/(dashboard)/alunos/actions"
 import { prepararBanco, entrarComo, executar, form, mensagem, tabela, alunoPorNome } from "../support/helpers"
 
-const adulto = { nome: "Carlos Teste", email: "carlos.teste@exemplo.com", telefone: "(11) 91234-0000", dataNasc: "2000-04-10", cpf: "000.000.001-99" }
+// Atualizado em 15/11/2026 para as regras corrigidas depois de 09/11 (R05 CPF com dígito verificador, R02, D03 senha forte, reposição com aula perdida, R09, D05).
+const adulto = { nome: "Carlos Teste", email: "carlos.teste@exemplo.com", telefone: "(11) 91234-0000", dataNasc: "2000-04-10", cpf: "987.654.321-00" }
 const camposDe = (a: { nome: string; email: string; telefone: string | null; dataNasc: Date | null; cpf: string | null; responsavelNome?: string | null; responsavelTelefone?: string | null }) => ({
   nome: a.nome, email: a.email, telefone: a.telefone ?? undefined, dataNasc: a.dataNasc?.toISOString().slice(0, 10), cpf: a.cpf ?? undefined,
   responsavelNome: a.responsavelNome ?? undefined, responsavelTelefone: a.responsavelTelefone ?? undefined,
@@ -21,17 +22,17 @@ describe("Cadastro de aluno (RF001, RF005, RF006, RF007 · Quadro A.3)", () => {
     expect(r.ok).toBe("Aluno cadastrado com sucesso.")
     expect(r.redirect?.startsWith("/alunos")).toBe(true)
     const a = tabela("aluno").find((x) => x.email === adulto.email)
-    expect(a?.cpf).toBe("00000000199")
+    expect(a?.cpf).toBe("98765432100")
     expect(a?.ativo).toBe(true)
   })
   it("CT09b com senha inicial, cria também o login do aluno (perfil ALUNO, senha com hash)", async () => {
-    await executar(() => salvarAluno(null, {}, form({ ...adulto, senha: "abc12345" })))
+    await executar(() => salvarAluno(null, {}, form({ ...adulto, senha: "Abc12345" })))
     const u = tabela("usuario").find((x) => x.email === adulto.email)
     expect(u?.role).toBe("ALUNO")
     expect(u?.senhaHash.startsWith("$2")).toBe(true)
   })
-  it("CT10 CPF já cadastrado (00000000103, Pedro) → “CPF já vinculado a um aluno existente.”", async () => {
-    const r = await executar(() => salvarAluno(null, {}, form({ ...adulto, cpf: "000.000.001-03" })))
+  it("CT10 CPF já cadastrado (12345670320, Pedro) → “CPF já vinculado a um aluno existente.”", async () => {
+    const r = await executar(() => salvarAluno(null, {}, form({ ...adulto, cpf: "123.456.703-20" })))
     expect(mensagem(r)).toBe("CPF já vinculado a um aluno existente.")
     expect(tabela("aluno").some((x) => x.email === adulto.email)).toBe(false)
   })
@@ -61,7 +62,7 @@ describe("Cadastro de aluno (RF001, RF005, RF006, RF007 · Quadro A.3)", () => {
     expect(a?.responsavelTelefone).toBe("(11) 97777-0000")
   })
   it("e-mail já usado por outro login → mensagem clara", async () => {
-    const r = await executar(() => salvarAluno(null, {}, form({ ...adulto, email: "admin@exemplo.com", senha: "abc12345" })))
+    const r = await executar(() => salvarAluno(null, {}, form({ ...adulto, email: "admin@exemplo.com", senha: "Abc12345" })))
     expect(mensagem(r)).toBe("Este e-mail já está em uso.")
   })
   it("NF06 envio direto à action com e-mail inválido e campos vazios → erro de validação, nada gravado", async () => {
@@ -86,11 +87,11 @@ describe("Edição e consulta de aluno (RF002, RF004 · Quadro A.4)", () => {
     expect(r.ok).toBe("Dados do aluno atualizados com sucesso.")
     expect(alunoPorNome("Sofia Martins").telefone).toBe("(11) 95555-1234")
   })
-  it("CT15 trocar o CPF de Sofia por 00000000101 → mensagem do CT10 e nada salvo", async () => {
+  it("CT15 trocar o CPF de Sofia pelo do Lucas (12345670169) → mensagem do CT10 e nada salvo", async () => {
     const sofia = alunoPorNome("Sofia Martins")
-    const r = await executar(() => salvarAluno(sofia.id, {}, form({ ...camposDe(sofia), cpf: "00000000101", telefone: "(11) 90000-0000" })))
+    const r = await executar(() => salvarAluno(sofia.id, {}, form({ ...camposDe(sofia), cpf: "12345670169", telefone: "(11) 90000-0000" })))
     expect(mensagem(r)).toBe("CPF já vinculado a um aluno existente.")
-    expect(alunoPorNome("Sofia Martins").cpf).toBe("00000000106")
+    expect(alunoPorNome("Sofia Martins").cpf).toBe("12345670673")
     expect(alunoPorNome("Sofia Martins").telefone).toBe("(11) 90000-1006")
   })
   it("editar e-mail de aluno com login atualiza também o login", async () => {
@@ -112,7 +113,7 @@ describe("Exclusão de aluno (RF003 · Quadro A.5)", () => {
   })
 
   it("CT17 excluir aluno sem vínculos → “Aluno excluído com sucesso.”", async () => {
-    await executar(() => salvarAluno(null, {}, form({ ...adulto, senha: "abc12345" })))
+    await executar(() => salvarAluno(null, {}, form({ ...adulto, senha: "Abc12345" })))
     const novo = tabela("aluno").find((x) => x.email === adulto.email)
     const r = await executar(() => excluirAluno(novo.id))
     expect(r.ok).toBe("Aluno excluído com sucesso.")

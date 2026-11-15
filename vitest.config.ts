@@ -23,6 +23,7 @@ export default defineConfig({
       { find: /^next-auth$/, replacement: r("./tests/support/next-auth.ts") },
       { find: /^next\/cache$/, replacement: r("./tests/support/next-cache.ts") },
       { find: /^next\/navigation$/, replacement: r("./tests/support/next-navigation.ts") },
+      { find: /^next\/headers$/, replacement: r("./tests/support/next-headers.ts") },
       { find: /^@\//, replacement: r("./src") + "/" },
     ],
   },

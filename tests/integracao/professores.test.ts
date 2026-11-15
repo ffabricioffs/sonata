@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs"
 import { salvarProfessor, excluirProfessor } from "@/app/(dashboard)/professores/actions"
 import { prepararBanco, entrarComo, executar, form, mensagem, tabela, professorPorNome, usuarioPorEmail } from "../support/helpers"
 
-const novo = { nome: "Helena Duarte", email: "helena.duarte@exemplo.com", cpf: "123.456.789-09", telefone: "(11) 97000-0000", endereco: "Rua das Flores, 10 - São Paulo/SP", senha: "abc12345" }
+const novo = { nome: "Helena Duarte", email: "helena.duarte@exemplo.com", cpf: "123.456.789-09", telefone: "(11) 97000-0000", endereco: "Rua das Flores, 10 - São Paulo/SP", senha: "Abc12345" }
 
 describe("Professores (RF008–RF013)", () => {
   beforeEach(async () => {

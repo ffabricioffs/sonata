@@ -62,8 +62,8 @@ describe("Salas (RF014–RF018)", () => {
     expect(atual.status).toBe("MANUTENCAO")
     expect(atual.manutencaoAte.toISOString().slice(0, 10)).toBe(ate)
     expect(salaEmManutencao(atual, addDays(todayStr(), 1))).toBe(true)
-    // no formulário de turma a opção fica desabilitada
-    expect((await opcoesTurma()).salas.find((x) => x.nome === "Sala 5")?.manutencao).toBe(true)
+    // no formulário de turma a sala aparece com o aviso "manutenção até dd/mm" (D05: a manutenção vale só no período)
+    expect((await opcoesTurma()).salas.find((x) => x.nome.startsWith("Sala 5"))?.manutencao).toMatch(/^manutenção até \d\d\/\d\d$/)
     // reserva dentro do período é recusada
     const res = await executar(() => criarReserva({}, form({ salaId: s5.id, data: addDays(todayStr(), 1), inicio: "08:00", fim: "09:00", tipo: "ENSAIO_INDIVIDUAL" })))
     expect(mensagem(res)).toBe("Conflito de horário: a sala não está disponível neste período.")

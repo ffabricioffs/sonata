@@ -1,5 +1,7 @@
 # Testes automatizados do Sonata
 
+> Atualizado em 15/11/2026: os testes rodam no CI (job "testes" em `.github/workflows/ci.yml`). Os testes de 09/11 foram ajustados às regras corrigidas depois (CPF com dígito verificador, senha forte, reposição com aula perdida, aula futura, manutenção por período, mensagens novas) e ganharam testes de comportamento para a recuperação de senha, as mensalidades e as correções do teste com usuários.
+
 Cobrem os casos do roteiro que não dependem de navegador: regras de conflito (RN01–RN14), validações (RNF006), autenticação e permissões (CT01–CT04, CT47, RNF005) e os fluxos das Server Actions de alunos, professores, salas, instrumentos, turmas, matrículas, reservas e solicitações (CT09–CT62). O nome de cada teste começa pelo ID do caso no roteiro.
 
 ## Como rodar

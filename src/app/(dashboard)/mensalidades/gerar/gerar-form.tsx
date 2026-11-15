@@ -7,7 +7,7 @@ import { Select } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Field, FormAlert, SubmitButton } from "@/components/form-bits"
 import { keepValues, type FormState } from "@/lib/form-state"
-import { MESES } from "@/lib/validations/mensalidade"
+import { MESES, urlMensalidades } from "@/lib/validations/mensalidade"
 import { gerarMensalidadesDoMes } from "../actions"
 
 export function GerarForm({ mes, ano }: { mes: string; ano: string }) {
@@ -35,7 +35,7 @@ export function GerarForm({ mes, ano }: { mes: string; ano: string }) {
       </div>
       <div className="flex gap-3">
         <SubmitButton pendingText="Gerando…">Gerar mensalidades</SubmitButton>
-        <Button asChild variant="outline"><Link href="/mensalidades">Cancelar</Link></Button>
+        <Button asChild variant="outline"><Link href={urlMensalidades(mes, ano)}>Cancelar</Link></Button>
       </div>
     </form>
   )

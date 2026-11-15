@@ -37,5 +37,20 @@ export const gerarMesSchema = z.object({
 
 export const MESES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
 export const competenciaLabel = (mes: number, ano: number) => `${String(mes).padStart(2, "0")}/${ano}`
+
+export const SITUACOES = ["aberta", "atrasada", "paga"] as const
+export type Situacao = (typeof SITUACOES)[number]
+export const situacaoValida = (s: unknown): Situacao | "" => (SITUACOES.includes(s as Situacao) ? (s as Situacao) : "")
+
+/** Endereço da lista de mensalidades na competência (e no filtro) informada. */
+export function urlMensalidades(mes?: number | string, ano?: number | string, situacao?: string): string {
+  const q = new URLSearchParams()
+  if (Number(mes) >= 1 && Number(mes) <= 12) q.set("mes", String(Number(mes)))
+  if (Number(ano) > 0) q.set("ano", String(Number(ano)))
+  const s = situacaoValida(situacao)
+  if (s) q.set("situacao", s)
+  const qs = q.toString()
+  return qs ? `/mensalidades?${qs}` : "/mensalidades"
+}
 export const fmtBRL = (v: number | { toString(): string }) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(v.toString()))

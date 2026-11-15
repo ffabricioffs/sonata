@@ -8,10 +8,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { ActionButton } from "@/components/form-bits"
 import { Flash } from "@/components/flash"
-import { competenciaLabel, fmtBRL, MESES } from "@/lib/validations/mensalidade"
+import { competenciaLabel, fmtBRL, MESES, situacaoValida, urlMensalidades, type Situacao } from "@/lib/validations/mensalidade"
 import { desfazerQuitacao, excluirMensalidade, quitarMensalidade } from "./actions"
 
-type Situacao = "paga" | "atrasada" | "aberta"
 const FILTROS = [
   { k: "", label: "Todas" },
   { k: "aberta", label: "Em aberto" },
@@ -41,12 +40,12 @@ export default async function MensalidadesPage({ searchParams }: { searchParams:
   const pagas = lista.filter((p) => p.pago)
   const atrasadas = lista.filter((p) => situacaoDe(p) === "atrasada")
   const abertas = lista.filter((p) => !p.pago)
-  const filtro = FILTROS.some((f) => f.k === sp.situacao) ? (sp.situacao as Situacao) : ""
+  const filtro = situacaoValida(sp.situacao)
   const visiveis = filtro ? lista.filter((p) => situacaoDe(p) === filtro) : lista
 
   const anterior = mes === 1 ? { mes: 12, ano: ano - 1 } : { mes: mes - 1, ano }
   const proxima = mes === 12 ? { mes: 1, ano: ano + 1 } : { mes: mes + 1, ano }
-  const url = (m: number, a: number, s = filtro) => `/mensalidades?mes=${m}&ano=${a}${s ? `&situacao=${s}` : ""}`
+  const url = (m: number, a: number, s: string = filtro) => urlMensalidades(m, a, s)
   const badge = (s: Situacao) =>
     s === "paga" ? <Badge variant="default">Paga</Badge> : s === "atrasada" ? <Badge variant="destructive">Em atraso</Badge> : <Badge variant="outline">Em aberto</Badge>
 
@@ -114,12 +113,12 @@ export default async function MensalidadesPage({ searchParams }: { searchParams:
                 <td className="px-4 py-3">
                   <div className="flex items-start justify-end gap-2">
                     {p.pago ? (
-                      <ActionButton action={desfazerQuitacao.bind(null, p.id)} variant="ghost" confirmText="Desfazer a quitação? A mensalidade volta para em aberto.">Desfazer</ActionButton>
+                      <ActionButton action={desfazerQuitacao.bind(null, p.id, filtro)} variant="ghost" confirmText="Desfazer a quitação? A mensalidade volta para em aberto.">Desfazer</ActionButton>
                     ) : (
                       <>
-                        <ActionButton action={quitarMensalidade.bind(null, p.id)} variant="default" confirmText={`Quitar a mensalidade de ${p.aluno.nome} (${fmtBRL(p.valor)}) com a data de hoje?`}>Quitar</ActionButton>
+                        <ActionButton action={quitarMensalidade.bind(null, p.id, filtro)} variant="default" confirmText={`Quitar a mensalidade de ${p.aluno.nome} (${fmtBRL(p.valor)}) com a data de hoje?`}>Quitar</ActionButton>
                         <Button asChild variant="ghost" size="sm"><Link href={`/mensalidades/editar?id=${p.id}`}>Editar</Link></Button>
-                        <ActionButton action={excluirMensalidade.bind(null, p.id)} variant="ghost" confirmText="Excluir esta mensalidade?">Excluir</ActionButton>
+                        <ActionButton action={excluirMensalidade.bind(null, p.id, filtro)} variant="ghost" confirmText="Excluir esta mensalidade?">Excluir</ActionButton>
                       </>
                     )}
                   </div>

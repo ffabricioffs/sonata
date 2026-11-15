@@ -7,7 +7,7 @@ import { Select, Textarea } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Field, FormAlert, SubmitButton } from "@/components/form-bits"
 import { keepValues, type FormState } from "@/lib/form-state"
-import { MESES } from "@/lib/validations/mensalidade"
+import { MESES, urlMensalidades } from "@/lib/validations/mensalidade"
 import { salvarMensalidade } from "./actions"
 
 type Opt = { id: string; nome: string }
@@ -48,7 +48,7 @@ export function MensalidadeForm({ id, alunos, defaults = {} }: { id: string | nu
       </div>
       <div className="flex gap-3">
         <SubmitButton>{id ? "Salvar alterações" : "Registrar mensalidade"}</SubmitButton>
-        <Button asChild variant="outline"><Link href="/mensalidades">Cancelar</Link></Button>
+        <Button asChild variant="outline"><Link href={urlMensalidades(defaults.mes, defaults.ano)}>Cancelar</Link></Button>
       </div>
     </form>
   )

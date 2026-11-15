@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { requireUser, STAFF } from "@/lib/session"
 import { PageHeader } from "@/components/page-header"
 import { MensalidadeForm } from "../mensalidade-form"
+import { urlMensalidades } from "@/lib/validations/mensalidade"
 
 export default async function EditarMensalidadePage({ searchParams }: { searchParams: Promise<{ id?: string }> }) {
   await requireUser(STAFF)
@@ -10,7 +11,7 @@ export default async function EditarMensalidadePage({ searchParams }: { searchPa
   if (!id) notFound()
   const p = await prisma.pagamento.findUnique({ where: { id }, include: { aluno: true } })
   if (!p) notFound()
-  if (p.pago) redirect(`/mensalidades?mes=${p.mes}&ano=${p.ano}`)
+  if (p.pago) redirect(urlMensalidades(p.mes, p.ano))
   const ativos = await prisma.aluno.findMany({ where: { OR: [{ ativo: true }, { id: p.alunoId }] }, orderBy: { nome: "asc" }, select: { id: true, nome: true } })
   return (
     <div className="space-y-6">

@@ -28,12 +28,14 @@ describe("Solicitação (RF028, RF029, RF031–RF033 · Quadro A.17)", () => {
     expect(tabela("solicitacaoAula").at(-1)?.status).toBe("PENDENTE")
   })
   it("CT56 Rafael e a administração recebem a notificação", async () => {
+    // o seed já traz uma notificação desse tipo para o Rafael: conta só as criadas por este pedido
+    const para = (email: string) => tabela("notificacao").filter((n) => n.usuarioId === usuarioPorEmail(email).id && /Nova solicitação de (reposição|aula extra) de Pedro Almeida/.test(n.mensagem)).length
+    const antes = Object.fromEntries(["rafael.mendes", "admin", "secretaria", "mariana.costa"].map((e) => [e, para(`${e}@exemplo.com`)]))
     await executar(() => solicitarAula({}, form(pedido())))
-    const para = (email: string) => tabela("notificacao").filter((n) => n.usuarioId === usuarioPorEmail(email).id && /Nova solicitação de (reposição|aula extra) de Pedro Almeida/.test(n.mensagem))
-    expect(para("rafael.mendes@exemplo.com")).toHaveLength(1)
-    expect(para("admin@exemplo.com")).toHaveLength(1)
-    expect(para("secretaria@exemplo.com")).toHaveLength(1)
-    expect(para("mariana.costa@exemplo.com")).toHaveLength(0)
+    expect(para("rafael.mendes@exemplo.com") - antes["rafael.mendes"]).toBe(1)
+    expect(para("admin@exemplo.com") - antes["admin"]).toBe(1)
+    expect(para("secretaria@exemplo.com") - antes["secretaria"]).toBe(1)
+    expect(para("mariana.costa@exemplo.com") - antes["mariana.costa"]).toBe(0)
   })
   it("CT58 / RN12 ao passar do limite de pendentes (3) → “Você atingiu o limite de solicitações pendentes…”", async () => {
     // Pedro já tem 1 pendente no seed

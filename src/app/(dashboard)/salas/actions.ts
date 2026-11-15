@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/prisma"
 import { assertRole, STAFF } from "@/lib/session"
 import { salaFormSchema } from "@/lib/validations/sala"
-import { actionError, formToObject, zodFieldErrors, type FormState, erroValidacao } from "@/lib/form-state"
+import { actionError, formToObject, type FormState, erroValidacao } from "@/lib/form-state"
 import { redirectOk } from "@/lib/flash"
 
 export async function salvarSala(id: string | null, _prev: FormState, fd: FormData): Promise<FormState> {

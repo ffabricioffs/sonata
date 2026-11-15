@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { assertRole, STAFF } from "@/lib/session"
 import { hashPassword } from "@/lib/password"
 import { professorFormSchema } from "@/lib/validations/professor"
-import { actionError, formToObject, zodFieldErrors, type FormState, erroValidacao } from "@/lib/form-state"
+import { actionError, formToObject, type FormState, erroValidacao } from "@/lib/form-state"
 import { redirectOk } from "@/lib/flash"
 
 export async function salvarProfessor(id: string | null, _prev: FormState, fd: FormData): Promise<FormState> {

@@ -3,7 +3,6 @@ import type { DiaSemanaKey } from "@/lib/dates"
 import { dayRange, diaSemanaOf, fmtDateBR, fmtTime, fromMin, overlaps, toInputDate, toMin, todayStr } from "@/lib/dates"
 
 export { MSG_CONFLITO_SALA, MSG_CONFLITO_PROF_OU_SALA, MSG_HORARIO_INVALIDO } from "@/lib/mensagens"
-import { MSG_CONFLITO_SALA, MSG_CONFLITO_PROF_OU_SALA, MSG_HORARIO_INVALIDO } from "@/lib/mensagens"
 
 export type Ocupacao = { origem: "turma" | "reserva"; id: string; salaId: string | null; professorId: string | null; inicio: string; dur: number }
 

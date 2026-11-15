@@ -1,6 +1,6 @@
 name: CI
 
-# R22 — typecheck (e lint, informativo) a cada push e pull request
+# R22 — typecheck e lint a cada push e pull request
 on:
   push:
   pull_request:
@@ -18,8 +18,6 @@ jobs:
       - run: npm ci
       - name: Typecheck
         run: npm run typecheck
-      # "next lint" não existe mais no Next 16 e o projeto ainda não tem eslint.config.*;
-      # o passo roda para mostrar a situação, mas não reprova o PR até o lint ser configurado.
-      - name: Lint (informativo)
+      # ESLint 9 + eslint-config-next 16 (eslint.config.mjs)
+      - name: Lint
         run: npm run lint
-        continue-on-error: true
